@@ -172,3 +172,13 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Node.js specific
+.DS_Store
+*/.DS_Store
+node_modules/
+*/node_modules/
+package-lock.json
+*/package-lock.json
+.env
+*/.env
