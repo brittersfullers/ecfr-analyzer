@@ -12,7 +12,7 @@ const ChartDashboard = () => {
   const [titleNames, setTitleNames] = useState({});
 
   useEffect(() => {
-    fetch("/small_summary.json")
+    fetch("http://localhost:3001/small_summary.json")
       .then((response) => response.json())
       .then((json) => {
         setAllData(json);
@@ -59,7 +59,8 @@ const ChartDashboard = () => {
 
     let labels = Object.keys(titleMetrics).map(titleNum => titleNames[titleNum] || titleNum);
     let values = labels.map((title) => {
-      const metrics = titleMetrics[title];
+      const titleNum = title.split("—")[0].trim();
+      const metrics = titleMetrics[titleNum];
       // Safe check for undefined metrics
       if (!metrics) return 0;
 
@@ -81,17 +82,16 @@ const ChartDashboard = () => {
 
     // Adjust filtering logic for selectedTitle
     if (selectedTitle !== "All Titles") {
-      labels = labels.filter((label) => label === selectedTitle); // Filter by selected Title
-      values = labels.map((label) => {
-        const titleNum = label.split("—")[0].trim();
-        return titleMetrics[titleNum]?.wordCount || 0;
-      });
-    } else {
-      // When "All Titles" is selected, show all titles
-      values = labels.map((label) => {
-        const titleNum = label.split("—")[0].trim();
-        return titleMetrics[titleNum]?.wordCount || 0;
-      });
+      const selectedTitleNum = selectedTitle.split("—")[0].trim();
+      const selectedMetrics = titleMetrics[selectedTitleNum];
+      
+      if (selectedMetrics) {
+        labels = [selectedTitle];
+        values = [selectedMetric === "wordCount" ? selectedMetrics.wordCount :
+                 selectedMetric === "sectionCount" ? selectedMetrics.sectionCount :
+                 selectedMetric === "partCount" ? selectedMetrics.partCount :
+                 selectedMetric === "avgWordsPerSection" ? (selectedMetrics.wordCount / (selectedMetrics.sectionCount || 1)).toFixed(2) : 0];
+      }
     }
 
     // Apply the color gradient logic

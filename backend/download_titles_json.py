@@ -8,7 +8,7 @@ if not os.path.exists("json_titles"):
 
 # Loop through Titles 1 to 50
 for title_num in range(1, 51):
-    url = f"https://www.ecfr.gov/api/renderer/v1/content/enhanced/current/title-{title_num}.json"
+    url = f"https://www.ecfr.gov/api/versioner/v1/structure/current/title-{title_num}.json"
     print(f"Downloading Title {title_num} from {url}")
 
     try:
