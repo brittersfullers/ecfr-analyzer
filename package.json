@@ -1,20 +1,16 @@
 {
   "name": "ecfr-analyzer",
   "version": "1.0.0",
-  "description": "**Programmatic Download of Current eCFR**",
-  "main": "index.js",
+  "description": "ECFR Analyzer Application",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "cd backend && npm start",
+    "build": "cd frontend && npm install && npm run build",
+    "heroku-postbuild": "npm run build",
+    "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/brittersfullers/ecfr-analyzer.git"
+  "engines": {
+    "node": "18.x"
   },
-  "keywords": [],
   "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/brittersfullers/ecfr-analyzer/issues"
-  },
-  "homepage": "https://github.com/brittersfullers/ecfr-analyzer#readme"
+  "license": "ISC"
 }

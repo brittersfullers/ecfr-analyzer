@@ -4,6 +4,8 @@ import { Chart, BarElement, CategoryScale, LinearScale } from "chart.js";
 
 Chart.register(BarElement, CategoryScale, LinearScale);
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 const ChartDashboard = () => {
   const [allData, setAllData] = useState([]);
   const [selectedMetric, setSelectedMetric] = useState("wordCount");
@@ -12,7 +14,7 @@ const ChartDashboard = () => {
   const [titleNames, setTitleNames] = useState({});
 
   useEffect(() => {
-    fetch("http://localhost:3001/small_summary.json")
+    fetch(`${API_URL}/small_summary.json`)
       .then((response) => response.json())
       .then((json) => {
         setAllData(json);
