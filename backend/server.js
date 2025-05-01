@@ -14,8 +14,12 @@ const s3 = new AWS.S3({
   region: process.env.AWS_REGION
 });
 
-// Enable CORS for all routes
-app.use(cors());
+// Enable CORS with specific configuration
+app.use(cors({
+  origin: ['https://ecfr-analyzer-api2-8bddf33fb1bd.herokuapp.com', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../frontend/build')));
