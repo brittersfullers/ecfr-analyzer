@@ -14,11 +14,12 @@ const s3 = new AWS.S3({
   region: process.env.AWS_REGION
 });
 
-// Enable CORS with more permissive configuration for debugging
+// Enable CORS with specific configuration
 app.use(cors({
-  origin: '*', // Allow all origins temporarily
+  origin: 'https://ecfr-analyzer-api2-8bddf33fb1bd.herokuapp.com',
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 
 // Add request logging middleware
