@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const AWS = require('aws-sdk');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -15,6 +16,9 @@ const s3 = new AWS.S3({
 
 // Enable CORS for all routes
 app.use(cors());
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../frontend/build')));
 
 // Endpoint for small_summary.json
 app.get('/small_summary.json', async (req, res) => {
@@ -46,6 +50,12 @@ app.get('/json_titles/:filename', async (req, res) => {
     console.error('Error:', error);
     res.status(500).json({ error: 'Failed to fetch data from S3' });
   }
+});
+
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/build/index.html'));
 });
 
 // Start the server
