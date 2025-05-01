@@ -12,12 +12,25 @@ const ChartDashboard = () => {
   const [selectedTitle, setSelectedTitle] = useState("All Titles");  // Single-select version
   const [chartData, setChartData] = useState(null);
   const [titleNames, setTitleNames] = useState({});
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    console.log('Fetching data from:', `${API_URL}/small_summary.json`);
     fetch(`${API_URL}/small_summary.json`)
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
       .then((json) => {
+        console.log('Data received:', json);
         setAllData(json);
+        setError(null);
+      })
+      .catch((error) => {
+        console.error('Error fetching data:', error);
+        setError(error.message);
       });
   }, []);
 
@@ -150,6 +163,12 @@ const ChartDashboard = () => {
     <div style={{ width: "90%", margin: "auto" }}>
       <h1>eCFR Analyzer Dashboard</h1>
 
+      {error && (
+        <div style={{ color: 'red', marginBottom: '1rem' }}>
+          Error loading data: {error}
+        </div>
+      )}
+
       <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
         <select value={selectedMetric} onChange={(e) => setSelectedMetric(e.target.value)} id="metricSelect">
           <option value="wordCount">Total Word Count</option>
@@ -160,7 +179,7 @@ const ChartDashboard = () => {
 
         <select 
           value={selectedTitle} 
-          onChange={(e) => setSelectedTitle(e.target.value)}  // Single-select for Titles
+          onChange={(e) => setSelectedTitle(e.target.value)}
           id="titleSelect"
         >
           <option value="All Titles">All Titles</option>
