@@ -14,9 +14,27 @@ const s3 = new AWS.S3({
   region: process.env.AWS_REGION
 });
 
+// Determine environment prefix
+const ENV_PREFIX = process.env.NODE_ENV === 'production' ? 'prod/' : 'staging/';
+
 // Enable CORS with specific configuration
+const allowedOrigins = [
+  'https://ecfr-analyzer-api2-8bddf33fb1bd.herokuapp.com',
+  'https://ecfr-analyzer-staging.herokuapp.com',
+  'http://localhost:3000'  // For local development
+];
+
 app.use(cors({
-  origin: 'https://ecfr-analyzer-api2-8bddf33fb1bd.herokuapp.com',
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -44,7 +62,7 @@ app.get('/small_summary.json', async (req, res) => {
     console.log('Attempting to fetch small_summary.json from S3...');
     const params = {
       Bucket: process.env.S3_BUCKET_NAME,
-      Key: 'small_summary.json'
+      Key: `${ENV_PREFIX}small_summary.json`
     };
     
     console.log('S3 params:', { ...params, secretAccessKey: '[REDACTED]' });
@@ -69,7 +87,7 @@ app.get('/json_titles/:filename', async (req, res) => {
   try {
     const params = {
       Bucket: process.env.S3_BUCKET_NAME,
-      Key: `json_titles/${req.params.filename}`
+      Key: `${ENV_PREFIX}json_titles/${req.params.filename}`
     };
     
     const data = await s3.getObject(params).promise();
