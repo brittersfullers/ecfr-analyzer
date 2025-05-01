@@ -24,11 +24,18 @@ app.use(cors({
 // Add request logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('Headers:', req.headers);
   next();
 });
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../frontend/build')));
+
+// Test endpoint
+app.get('/test', (req, res) => {
+  console.log('Test endpoint hit');
+  res.json({ message: 'Backend is working!' });
+});
 
 // Endpoint for small_summary.json
 app.get('/small_summary.json', async (req, res) => {
@@ -75,10 +82,17 @@ app.get('/json_titles/:filename', async (req, res) => {
 // The "catchall" handler: for any request that doesn't
 // match one above, send back React's index.html file.
 app.get('*', (req, res) => {
+  console.log('Catchall route hit for:', req.url);
   res.sendFile(path.join(__dirname, '../frontend/build/index.html'));
 });
 
 // Start the server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+  console.log('Environment:', {
+    NODE_ENV: process.env.NODE_ENV,
+    PORT: process.env.PORT,
+    AWS_REGION: process.env.AWS_REGION,
+    S3_BUCKET_NAME: process.env.S3_BUCKET_NAME
+  });
 }); 
