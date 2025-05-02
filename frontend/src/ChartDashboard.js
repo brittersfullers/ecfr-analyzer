@@ -166,8 +166,12 @@ const ChartDashboard = () => {
     const { titleMetrics, titleNames } = processedData;
     setTitleNames(titleNames);
 
-    const labels = Object.keys(titleMetrics);
-    const values = labels.map(titleNum => {
+    let filteredTitles = Object.keys(titleMetrics);
+    if (selectedTitle !== "All Titles") {
+      filteredTitles = filteredTitles.filter(titleNum => titleNames[titleNum] === selectedTitle);
+    }
+
+    const values = filteredTitles.map(titleNum => {
       switch (selectedMetric) {
         case "wordCount":
           return titleMetrics[titleNum].wordCount;
@@ -185,7 +189,7 @@ const ChartDashboard = () => {
     });
 
     setChartData({
-      labels: labels.map(titleNum => titleNames[titleNum]),
+      labels: filteredTitles.map(titleNum => titleNames[titleNum]),
       datasets: [{
         label: getMetricLabel(selectedMetric),
         data: values,
@@ -194,7 +198,7 @@ const ChartDashboard = () => {
         borderWidth: 1,
       }],
     });
-  }, [processedData, selectedMetric]);
+  }, [processedData, selectedMetric, selectedTitle]);
 
   const getMetricLabel = (metric) => {
     switch (metric) {
@@ -215,7 +219,7 @@ const ChartDashboard = () => {
     <div className="chart-container">
       <h2 className="chart-title">Regulation Analysis</h2>
       <p className="chart-description">
-        Select a metric to view the analysis of regulations by title.
+        Select a metric and title to view the analysis of regulations.
       </p>
       <div className="chart-content">
         {error && (
@@ -239,6 +243,16 @@ const ChartDashboard = () => {
                 <option value="sectionCount">Number of Sections</option>
                 <option value="partCount">Number of Parts</option>
                 <option value="avgWordsPerSection">Average Words per Section</option>
+              </select>
+              <select
+                value={selectedTitle}
+                onChange={(e) => setSelectedTitle(e.target.value)}
+                className="title-select"
+              >
+                <option value="All Titles">All Titles</option>
+                {Object.entries(titleNames).map(([titleNum, fullTitle]) => (
+                  <option key={titleNum} value={fullTitle}>{fullTitle}</option>
+                ))}
               </select>
             </div>
             {chartData && (

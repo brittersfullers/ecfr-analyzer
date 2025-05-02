@@ -128,11 +128,8 @@ body {
 }
 
 .chart-container {
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 20px;
   margin: 20px 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
 }
 
 .chart-title {
@@ -164,7 +161,8 @@ body {
 }
 
 .metric-select,
-.time-select {
+.time-select,
+.year-select {
   background-color: #f5f5f5;
   color: #333;
   border: 1px solid #ddd;
@@ -178,7 +176,8 @@ body {
 }
 
 .metric-select:hover,
-.time-select:hover {
+.time-select:hover,
+.year-select:hover {
   border-color: #999;
 }
 

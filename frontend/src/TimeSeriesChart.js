@@ -12,6 +12,7 @@ const TimeSeriesChart = () => {
   const [selectedTitle, setSelectedTitle] = useState("All Titles");
   const [selectedMetric, setSelectedMetric] = useState("wordCount");
   const [timePeriod, setTimePeriod] = useState("Monthly");
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [chartData, setChartData] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +27,13 @@ const TimeSeriesChart = () => {
     const departmentData = {};
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setFullYear(startDate.getFullYear() - 50);
+    
+    if (timePeriod === "Daily") {
+      startDate.setFullYear(selectedYear, 0, 1);
+      endDate.setFullYear(selectedYear, 11, 31);
+    } else {
+      startDate.setFullYear(startDate.getFullYear() - 50);
+    }
 
     let timeLabels = [];
     switch (timePeriod) {
@@ -37,22 +44,24 @@ const TimeSeriesChart = () => {
         break;
       case "Weekly":
         for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 7)) {
-          timeLabels.push(d.toISOString().split('T')[0]);
+          const weekNum = Math.ceil((d.getDate() + d.getDay()) / 7);
+          timeLabels.push(`${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear()} | Wk ${weekNum}`);
         }
         break;
       case "Monthly":
         for (let d = new Date(startDate); d <= endDate; d.setMonth(d.getMonth() + 1)) {
-          timeLabels.push(d.toISOString().split('T')[0]);
+          timeLabels.push(`${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear()}`);
         }
         break;
       case "Quarterly":
         for (let d = new Date(startDate); d <= endDate; d.setMonth(d.getMonth() + 3)) {
-          timeLabels.push(d.toISOString().split('T')[0]);
+          const quarter = Math.floor(d.getMonth() / 3) + 1;
+          timeLabels.push(`${d.getFullYear()} | Qtr ${quarter}`);
         }
         break;
       case "Annually":
         for (let d = new Date(startDate); d <= endDate; d.setFullYear(d.getFullYear() + 1)) {
-          timeLabels.push(d.toISOString().split('T')[0]);
+          timeLabels.push(d.getFullYear().toString());
         }
         break;
       default:
@@ -108,7 +117,7 @@ const TimeSeriesChart = () => {
     });
 
     return { departmentData, timeLabels };
-  }, [data, timePeriod]);
+  }, [data, timePeriod, selectedYear]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -207,12 +216,12 @@ const TimeSeriesChart = () => {
       x: {
         type: 'time',
         time: {
-          unit: 'day',
+          unit: timePeriod.toLowerCase(),
           displayFormats: {
             day: 'MMM d, yyyy',
-            week: 'MMM d, yyyy',
+            week: 'MMM yyyy | Wk w',
             month: 'MMM yyyy',
-            quarter: 'QQQ yyyy',
+            quarter: 'yyyy | Qtr Q',
             year: 'yyyy'
           }
         },
@@ -232,7 +241,9 @@ const TimeSeriesChart = () => {
             family: '__Inter_d65c78, __Inter_Fallback_d65c78',
             size: 12,
             weight: '400'
-          }
+          },
+          maxRotation: 45,
+          minRotation: 45
         },
         grid: {
           color: 'rgba(249, 250, 251, 0.1)'
@@ -305,9 +316,9 @@ const TimeSeriesChart = () => {
 
   return (
     <div className="chart-container">
-      <h2 className="chart-title">Federal Regulations Changes Over Time</h2>
+      <h2 className="chart-title">Time Series Analysis</h2>
       <p className="chart-description">
-        Track changes in federal regulations by agency. Negative values indicate reduction, positive values indicate increase.
+        Select a metric and time period to view the analysis over time.
       </p>
       <div className="chart-content">
         {error && (
@@ -322,32 +333,20 @@ const TimeSeriesChart = () => {
         ) : (
           <>
             <div className="chart-controls">
-              <select 
-                value={selectedTitle} 
-                onChange={(e) => setSelectedTitle(e.target.value)}
-                id="titleSelect"
-              >
-                <option value="All Titles">All Titles</option>
-                {titles.map(title => (
-                  <option key={title} value={title}>{title}</option>
-                ))}
-              </select>
-
-              <select 
-                value={selectedMetric} 
+              <select
+                value={selectedMetric}
                 onChange={(e) => setSelectedMetric(e.target.value)}
-                id="metricSelect"
+                className="metric-select"
               >
                 <option value="wordCount">Total Word Count</option>
                 <option value="sectionCount">Number of Sections</option>
                 <option value="partCount">Number of Parts</option>
                 <option value="avgWordsPerSection">Average Words per Section</option>
               </select>
-
-              <select 
-                value={timePeriod} 
+              <select
+                value={timePeriod}
                 onChange={(e) => setTimePeriod(e.target.value)}
-                id="timePeriodSelect"
+                className="time-select"
               >
                 <option value="Daily">Daily</option>
                 <option value="Weekly">Weekly</option>
@@ -355,10 +354,25 @@ const TimeSeriesChart = () => {
                 <option value="Quarterly">Quarterly</option>
                 <option value="Annually">Annually</option>
               </select>
+              {timePeriod === "Daily" && (
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="year-select"
+                >
+                  {Array.from({ length: 50 }, (_, i) => {
+                    const year = new Date().getFullYear() - i;
+                    return (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    );
+                  })}
+                </select>
+              )}
             </div>
-
             {chartData && (
-              <div style={{ height: '500px', width: '100%' }}>
+              <div style={{ height: '500px' }}>
                 <Scatter data={chartData} options={chartOptions} />
               </div>
             )}
