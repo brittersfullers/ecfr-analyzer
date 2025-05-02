@@ -1,7 +1,6 @@
 import React from 'react';
 import './App.css';
 import ChartDashboard from './ChartDashboard';
-import TimeSeriesChart from './TimeSeriesChart';
 
 function App() {
   return (
@@ -25,7 +24,6 @@ function App() {
       </header>
       <main className="App-main">
         <ChartDashboard />
-        <TimeSeriesChart />
       </main>
       <footer className="App-footer">
         <p>© 2024 eCFR Analyzer. All rights reserved.</p>
