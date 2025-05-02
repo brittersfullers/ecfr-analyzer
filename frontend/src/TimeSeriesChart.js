@@ -117,7 +117,21 @@ const TimeSeriesChart = () => {
           });
         }
 
-        const entryDate = new Date(entry.date || entry.created_at).toISOString().split('T')[0];
+        // Safely handle date parsing
+        let entryDate;
+        try {
+          const dateStr = entry.date || entry.created_at;
+          if (!dateStr) return; // Skip if no date
+          
+          entryDate = new Date(dateStr);
+          if (isNaN(entryDate.getTime())) return; // Skip if invalid date
+          
+          entryDate = entryDate.toISOString().split('T')[0];
+        } catch (error) {
+          console.warn('Invalid date for entry:', entry);
+          return; // Skip entries with invalid dates
+        }
+
         const closestTimeLabel = timeLabels.reduce((prev, curr) => {
           return Math.abs(new Date(curr) - new Date(entryDate)) < Math.abs(new Date(prev) - new Date(entryDate)) ? curr : prev;
         });
