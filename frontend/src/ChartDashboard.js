@@ -6,6 +6,38 @@ Chart.register(BarElement, CategoryScale, LinearScale);
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://ecfr-analyzer-staging-5b93a7fa9af7.herokuapp.com';
 
+// Chart options for better label display
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  scales: {
+    x: {
+      ticks: {
+        maxRotation: 45,
+        minRotation: 45,
+        font: {
+          size: 10
+        },
+        padding: 10
+      },
+      grid: {
+        display: false
+      }
+    },
+    y: {
+      beginAtZero: true,
+      grid: {
+        color: 'rgba(0, 0, 0, 0.1)'
+      }
+    }
+  },
+  plugins: {
+    legend: {
+      display: false
+    }
+  }
+};
+
 const ChartDashboard = () => {
   const [allData, setAllData] = useState([]);
   const [selectedMetric, setSelectedMetric] = useState("wordCount");
@@ -79,7 +111,11 @@ const ChartDashboard = () => {
 
     setTitleNames(titleNames);
 
-    let labels = Object.keys(titleMetrics).map(titleNum => titleNames[titleNum] || titleNum);
+    let labels = Object.keys(titleMetrics).map(titleNum => {
+      const fullTitle = titleNames[titleNum] || titleNum;
+      // Remove the number prefix and dash, then trim
+      return fullTitle.split("—")[1]?.trim() || fullTitle;
+    });
     let values = labels.map((title) => {
       const titleNum = title.split("—")[0].trim();
       const metrics = titleMetrics[titleNum];
@@ -201,7 +237,14 @@ const ChartDashboard = () => {
           </select>
         </div>
 
-        {chartData ? <Bar data={chartData} /> : <p>Loading chart...</p>}
+        {chartData ? (
+          <div style={{ height: '500px', width: '100%' }}>
+            <Bar 
+              data={chartData} 
+              options={chartOptions}
+            />
+          </div>
+        ) : <p>Loading chart...</p>}
       </div>
     </div>
   );
