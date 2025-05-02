@@ -32,26 +32,33 @@ const TimeSeriesChart = () => {
           }
           
           const year = new Date(item.date).getFullYear();
-          titles.add(item.title);
+          const title = item.title.trim();
+          titles.add(title);
 
           if (!yearlyAggregates[year]) {
             yearlyAggregates[year] = {};
           }
-          if (!yearlyAggregates[year][item.title]) {
-            yearlyAggregates[year][item.title] = {
+          if (!yearlyAggregates[year][title]) {
+            yearlyAggregates[year][title] = {
               wordCount: 0,
               sectionCount: 0,
               partCount: 0
             };
           }
           
-          yearlyAggregates[year][item.title].wordCount += Number(item.wordCount) || 0;
-          yearlyAggregates[year][item.title].sectionCount += Number(item.sectionCount) || 0;
-          yearlyAggregates[year][item.title].partCount += Number(item.partCount) || 0;
+          yearlyAggregates[year][title].wordCount += Number(item.wordCount) || 0;
+          yearlyAggregates[year][title].sectionCount += Number(item.sectionCount) || 0;
+          yearlyAggregates[year][title].partCount += Number(item.partCount) || 0;
         });
       }
 
-      const availableTitlesArray = Array.from(titles);
+      // Sort titles numerically
+      const availableTitlesArray = Array.from(titles).sort((a, b) => {
+        const numA = parseInt(a.replace(/\D/g, ''));
+        const numB = parseInt(b.replace(/\D/g, ''));
+        return numA - numB;
+      });
+      
       setAvailableTitles(availableTitlesArray);
       
       // If selected title is not in available titles, reset to "All Titles"
@@ -155,12 +162,39 @@ const TimeSeriesChart = () => {
     plugins: {
       title: {
         display: true,
-        text: `Yearly ${getMetricLabel(selectedMetric)}`
+        text: `Yearly ${getMetricLabel(selectedMetric)}`,
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
+      },
+      legend: {
+        display: true,
+        position: 'top',
+        labels: {
+          font: {
+            size: 12
+          }
+        }
       }
     },
     scales: {
       y: {
-        beginAtZero: true
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)'
+        },
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.7)'
+        }
+      },
+      x: {
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)'
+        },
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.7)'
+        }
       }
     }
   };
@@ -176,10 +210,13 @@ const TimeSeriesChart = () => {
   return (
     <div className="chart-container" style={{ 
       height: '600px',
+      minHeight: '600px',
       display: 'flex',
       flexDirection: 'column',
       position: 'relative',
-      padding: '1rem'
+      padding: '1rem',
+      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+      borderRadius: '8px'
     }}>
       {error && <div className="warning-message">{error}</div>}
       <div className="chart-controls" style={{ 
@@ -197,11 +234,14 @@ const TimeSeriesChart = () => {
           style={{
             padding: '0.5rem',
             borderRadius: '4px',
-            border: '1px solid #ccc'
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            color: 'white',
+            minWidth: '200px'
           }}
         >
           <option value="All Titles">All Titles</option>
-          {availableTitles.map(title => (
+          {availableTitles.sort().map(title => (
             <option key={title} value={title}>{title}</option>
           ))}
         </select>
@@ -215,7 +255,10 @@ const TimeSeriesChart = () => {
           style={{
             padding: '0.5rem',
             borderRadius: '4px',
-            border: '1px solid #ccc'
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            color: 'white',
+            minWidth: '150px'
           }}
         >
           <option value="wordCount">Word Count</option>
@@ -226,6 +269,7 @@ const TimeSeriesChart = () => {
       
       <div className="chart-wrapper" style={{ 
         height: '500px',
+        minHeight: '500px',
         position: 'relative',
         width: '100%'
       }}>
