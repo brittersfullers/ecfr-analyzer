@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Bar } from "react-chartjs-2";
 import { Chart, BarElement, CategoryScale, LinearScale } from "chart.js";
+import TimeSeriesChart from "./TimeSeriesChart";
 
 Chart.register(BarElement, CategoryScale, LinearScale);
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://ecfr-analyzer-staging-5b93a7fa9af7.herokuapp.com';
 
 // Chart options for better label display
 const chartOptions = {
@@ -125,23 +124,12 @@ const ChartDashboard = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        console.log('Fetching data from:', `${API_URL}/small_summary.json`);
-        const response = await fetch(`${API_URL}/small_summary.json`, {
-          mode: 'cors',
-          credentials: 'include',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        });
-
-        console.log('Response status:', response.status);
+        const response = await fetch('/small_summary.json');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const json = await response.json();
-        console.log('Data received:', json);
         
         if (!Array.isArray(json)) {
           throw new Error('Invalid data format: expected an array');
@@ -250,16 +238,21 @@ const ChartDashboard = () => {
                 className="title-select"
               >
                 <option value="All Titles">All Titles</option>
-                {Object.entries(titleNames).map(([titleNum, fullTitle]) => (
-                  <option key={titleNum} value={fullTitle}>{fullTitle}</option>
+                {Object.values(titleNames).map((title) => (
+                  <option key={title} value={title}>
+                    {title}
+                  </option>
                 ))}
               </select>
             </div>
             {chartData && (
-              <div style={{ height: '500px' }}>
+              <div className="chart-wrapper">
                 <Bar data={chartData} options={chartOptions} />
               </div>
             )}
+            <div className="time-series-chart">
+              <TimeSeriesChart />
+            </div>
           </>
         )}
       </div>

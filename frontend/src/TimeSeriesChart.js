@@ -4,21 +4,34 @@ import { Chart, PointElement, CategoryScale, LinearScale, LineElement } from "ch
 
 Chart.register(PointElement, CategoryScale, LinearScale, LineElement);
 
+const API_URL = process.env.REACT_APP_API_URL || 'https://ecfr-analyzer-staging-5b93a7fa9af7.herokuapp.com';
+
 const TimeSeriesChart = () => {
   const [selectedTitle, setSelectedTitle] = useState("All Titles");
   const [selectedMetric, setSelectedMetric] = useState("wordCount");
   const [chartData, setChartData] = useState(null);
   const [error, setError] = useState(null);
   const [availableTitles, setAvailableTitles] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch and process data
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/yearly_aggregates.json');
+        setIsLoading(true);
+        const response = await fetch(`${API_URL}/yearly_aggregates.json`, {
+          mode: 'cors',
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
         const data = await response.json();
         
         if (!Array.isArray(data)) {
@@ -91,9 +104,12 @@ const TimeSeriesChart = () => {
           labels: years,
           datasets
         });
+        setError(null);
       } catch (error) {
         console.error('Error loading data:', error);
         setError('Failed to load data. Please try again later.');
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -129,8 +145,12 @@ const TimeSeriesChart = () => {
     return <div className="error-message">{error}</div>;
   }
 
-  if (!chartData) {
+  if (isLoading) {
     return <div className="loading-message">Loading data...</div>;
+  }
+
+  if (!chartData) {
+    return <div className="error-message">No data available</div>;
   }
 
   return (

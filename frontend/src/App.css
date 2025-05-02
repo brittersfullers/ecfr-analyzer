@@ -258,3 +258,29 @@ canvas {
 .pdf-button {
   display: none;
 }
+
+.time-series-chart {
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.time-series-chart .chart-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.time-series-chart select {
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.2);
+  color: white;
+}
+
+.time-series-chart .chart-wrapper {
+  height: 400px;
+  margin-top: 1rem;
+}
