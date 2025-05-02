@@ -1,10 +1,24 @@
-import React from "react";
-import ChartDashboard from "./ChartDashboard";
+import React from 'react';
+import './App.css';
+import ChartDashboard from './ChartDashboard';
 
 function App() {
   return (
     <div className="App">
-      <ChartDashboard />
+      <header className="App-header">
+        <img src="/logo.svg" className="App-logo" alt="logo" />
+        <nav className="App-nav">
+          <a href="/">Home</a>
+          <a href="/regulations">Regulations</a>
+          <a href="/about">About</a>
+        </nav>
+      </header>
+      <main className="App-main">
+        <ChartDashboard />
+      </main>
+      <footer className="App-footer">
+        <p>© 2024 eCFR Analyzer. All rights reserved.</p>
+      </footer>
     </div>
   );
 }

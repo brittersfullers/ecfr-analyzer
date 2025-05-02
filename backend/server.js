@@ -18,10 +18,26 @@ const s3 = new AWS.S3({
 const ENV_PREFIX = process.env.NODE_ENV === 'production' ? 'prod/' : 'staging/';
 
 // Enable CORS with specific configuration
+const allowedOrigins = [
+  'https://ecfr-analyzer-staging-5b93a7fa9af7.herokuapp.com',
+  'http://localhost:3000'
+];
+
 app.use(cors({
-  origin: '*',  // Allow all origins for now
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      console.log('Rejected CORS request from origin:', origin);
+      return callback(new Error('Not allowed by CORS'), false);
+    }
+    console.log('Allowed CORS request from origin:', origin);
+    return callback(null, true);
+  },
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
   credentials: true
 }));
 

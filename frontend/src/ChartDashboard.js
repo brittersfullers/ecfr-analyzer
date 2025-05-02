@@ -16,7 +16,13 @@ const ChartDashboard = () => {
 
   useEffect(() => {
     console.log('Fetching data from:', `${API_URL}/small_summary.json`);
-    fetch(`${API_URL}/small_summary.json`)
+    fetch(`${API_URL}/small_summary.json`, {
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    })
       .then((response) => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -160,38 +166,42 @@ const ChartDashboard = () => {
   };
 
   return (
-    <div style={{ width: "90%", margin: "auto" }}>
-      <h1>eCFR Analyzer Dashboard</h1>
+    <div className="chart-container">
+      <h2 className="chart-title">Regulation Analysis</h2>
+      <p className="chart-description">
+        Select regulations from the dropdown to view their analysis.
+      </p>
+      <div className="chart-content">
+        {error && (
+          <div style={{ color: 'red', marginBottom: '1rem' }}>
+            Error loading data: {error}
+          </div>
+        )}
 
-      {error && (
-        <div style={{ color: 'red', marginBottom: '1rem' }}>
-          Error loading data: {error}
+        <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+          <select value={selectedMetric} onChange={(e) => setSelectedMetric(e.target.value)} id="metricSelect">
+            <option value="wordCount">Total Word Count</option>
+            <option value="sectionCount">Number of Sections</option>
+            <option value="partCount">Number of Parts</option>
+            <option value="avgWordsPerSection">Average Words per Section</option>
+          </select>
+
+          <select 
+            value={selectedTitle} 
+            onChange={(e) => setSelectedTitle(e.target.value)}
+            id="titleSelect"
+          >
+            <option value="All Titles">All Titles</option>
+            {Object.entries(titleNames).map(([titleNum, fullTitle]) => (
+              <option key={titleNum} value={fullTitle}>
+                {fullTitle}
+              </option>
+            ))}
+          </select>
         </div>
-      )}
 
-      <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
-        <select value={selectedMetric} onChange={(e) => setSelectedMetric(e.target.value)} id="metricSelect">
-          <option value="wordCount">Total Word Count</option>
-          <option value="sectionCount">Number of Sections</option>
-          <option value="partCount">Number of Parts</option>
-          <option value="avgWordsPerSection">Average Words per Section</option>
-        </select>
-
-        <select 
-          value={selectedTitle} 
-          onChange={(e) => setSelectedTitle(e.target.value)}
-          id="titleSelect"
-        >
-          <option value="All Titles">All Titles</option>
-          {Object.entries(titleNames).map(([titleNum, fullTitle]) => (
-            <option key={titleNum} value={fullTitle}>
-              {fullTitle}
-            </option>
-          ))}
-        </select>
+        {chartData ? <Bar data={chartData} /> : <p>Loading chart...</p>}
       </div>
-
-      {chartData ? <Bar data={chartData} /> : <p>Loading chart...</p>}
     </div>
   );
 };

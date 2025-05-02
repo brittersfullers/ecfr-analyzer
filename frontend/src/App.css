@@ -1,9 +1,11 @@
 .App {
-  text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .App-logo {
-  height: 40vmin;
+  height: 40px;
   pointer-events: none;
 }
 
@@ -14,14 +16,12 @@
 }
 
 .App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+  background-color: white;
+  padding: 16px 24px;
+  box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15);
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  justify-content: space-between;
 }
 
 .App-link {
@@ -47,4 +47,52 @@
   border-radius: 5px;
   background-color: #f4f4f4;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.App-nav {
+  display: flex;
+  gap: 24px;
+}
+
+.App-nav a {
+  color: var(--secondary-color);
+  font-size: 14px;
+}
+
+.App-main {
+  flex: 1;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.App-footer {
+  background-color: white;
+  padding: 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--secondary-color);
+  border-top: 1px solid var(--border-color);
+}
+
+.chart-container {
+  background-color: white;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+}
+
+.chart-title {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  color: var(--text-color);
+}
+
+.chart-description {
+  font-size: 14px;
+  color: var(--secondary-color);
+  margin-bottom: 24px;
 }
