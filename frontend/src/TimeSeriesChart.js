@@ -85,7 +85,9 @@ const TimeSeriesChart = () => {
           data: allTitlesData.map(data => data[selectedMetric]),
           borderColor: '#5A91EE',
           backgroundColor: '#5A91EE',
-          tension: 0.1
+          tension: 0.1,
+          pointRadius: 4,
+          pointHoverRadius: 6
         });
       } else {
         const titleData = years.map(year => {
@@ -98,7 +100,9 @@ const TimeSeriesChart = () => {
           data: titleData,
           borderColor: '#5A91EE',
           backgroundColor: '#5A91EE',
-          tension: 0.1
+          tension: 0.1,
+          pointRadius: 4,
+          pointHoverRadius: 6
         });
       }
 
@@ -165,16 +169,20 @@ const TimeSeriesChart = () => {
         text: `Yearly ${getMetricLabel(selectedMetric)}`,
         font: {
           size: 16,
-          weight: 'bold'
-        }
+          weight: 'bold',
+          family: '__Inter_d65c78, __Inter_Fallback_d65c78'
+        },
+        color: 'rgb(249, 250, 251)'
       },
       legend: {
         display: true,
         position: 'top',
         labels: {
           font: {
-            size: 12
-          }
+            size: 12,
+            family: '__Inter_d65c78, __Inter_Fallback_d65c78'
+          },
+          color: 'rgb(249, 250, 251)'
         }
       }
     },
@@ -182,18 +190,26 @@ const TimeSeriesChart = () => {
       y: {
         beginAtZero: true,
         grid: {
-          color: 'rgba(255, 255, 255, 0.1)'
+          color: 'rgba(249, 250, 251, 0.1)'
         },
         ticks: {
-          color: 'rgba(255, 255, 255, 0.7)'
+          color: 'rgb(249, 250, 251)',
+          font: {
+            family: '__Inter_d65c78, __Inter_Fallback_d65c78',
+            size: 12
+          }
         }
       },
       x: {
         grid: {
-          color: 'rgba(255, 255, 255, 0.1)'
+          color: 'rgba(249, 250, 251, 0.1)'
         },
         ticks: {
-          color: 'rgba(255, 255, 255, 0.7)'
+          color: 'rgb(249, 250, 251)',
+          font: {
+            family: '__Inter_d65c78, __Inter_Fallback_d65c78',
+            size: 12
+          }
         }
       }
     }
@@ -237,11 +253,12 @@ const TimeSeriesChart = () => {
             border: '1px solid rgba(255, 255, 255, 0.2)',
             backgroundColor: 'rgba(0, 0, 0, 0.2)',
             color: 'white',
-            minWidth: '200px'
+            minWidth: '200px',
+            fontFamily: '__Inter_d65c78, __Inter_Fallback_d65c78'
           }}
         >
           <option value="All Titles">All Titles</option>
-          {availableTitles.sort().map(title => (
+          {availableTitles.map(title => (
             <option key={title} value={title}>{title}</option>
           ))}
         </select>
@@ -258,7 +275,8 @@ const TimeSeriesChart = () => {
             border: '1px solid rgba(255, 255, 255, 0.2)',
             backgroundColor: 'rgba(0, 0, 0, 0.2)',
             color: 'white',
-            minWidth: '150px'
+            minWidth: '150px',
+            fontFamily: '__Inter_d65c78, __Inter_Fallback_d65c78'
           }}
         >
           <option value="wordCount">Word Count</option>
