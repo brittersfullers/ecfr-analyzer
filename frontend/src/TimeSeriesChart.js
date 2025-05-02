@@ -63,7 +63,6 @@ const TimeSeriesChart = () => {
 
     // Group data by department and time period
     const departmentData = {};
-    const timePeriods = {};
 
     // Create time periods for the last 50 years
     const endDate = new Date();
@@ -278,6 +277,11 @@ const TimeSeriesChart = () => {
                 changeText = value > 0 ? `Increased Average Words per Section by ${absValue}` : 
                           value < 0 ? `Reduced Average Words per Section by ${absValue}` : 
                           'No change in Average Words per Section';
+                break;
+              default:
+                changeText = value > 0 ? `Increased by ${absValue}` : 
+                          value < 0 ? `Reduced by ${absValue}` : 
+                          'No change';
                 break;
             }
             
