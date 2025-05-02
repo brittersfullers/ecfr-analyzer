@@ -32,6 +32,7 @@ body {
   margin: 0;
   color: var(--text-light);
   filter: none;
+  display: block;
 }
 
 .App-header {

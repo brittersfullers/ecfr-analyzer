@@ -17,7 +17,8 @@ const chartOptions = {
         minRotation: 45,
         font: {
           size: 12,
-          weight: 'bold'
+          weight: 'bold',
+          family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
         },
         padding: 10,
         color: 'var(--text-light)'
@@ -34,7 +35,8 @@ const chartOptions = {
       ticks: {
         color: 'var(--text-light)',
         font: {
-          weight: 'bold'
+          weight: 'bold',
+          family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
         }
       }
     }
@@ -45,7 +47,8 @@ const chartOptions = {
       labels: {
         color: 'var(--text-light)',
         font: {
-          weight: 'bold'
+          weight: 'bold',
+          family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
         }
       }
     },
@@ -56,10 +59,12 @@ const chartOptions = {
       borderColor: 'var(--border-color)',
       borderWidth: 1,
       titleFont: {
-        weight: 'bold'
+        weight: 'bold',
+        family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
       },
       bodyFont: {
-        weight: 'bold'
+        weight: 'bold',
+        family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
       }
     }
   }
@@ -111,6 +116,7 @@ const ChartDashboard = () => {
       return;
     }
 
+    console.log('Processing', allData.length, 'items');
     const titleMetrics = {};
     const titleNames = {};
 
@@ -145,7 +151,7 @@ const ChartDashboard = () => {
     console.log('Title metrics:', titleMetrics);
     setTitleNames(titleNames);
 
-    let labels = Object.keys(titleMetrics).map(titleNum => {
+    const labels = Object.keys(titleMetrics).map(titleNum => {
       const fullTitle = titleNames[titleNum] || titleNum;
       const departmentName = fullTitle.split("—")[1]?.trim() || fullTitle;
       return departmentName;
@@ -153,7 +159,7 @@ const ChartDashboard = () => {
 
     console.log('Labels:', labels);
 
-    let values = labels.map((title) => {
+    const values = labels.map((title) => {
       const titleNum = title.split("—")[0].trim();
       const metrics = titleMetrics[titleNum];
       if (!metrics) return 0;
