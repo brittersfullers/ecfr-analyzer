@@ -151,73 +151,49 @@ const ChartDashboard = () => {
     console.log('Title metrics:', titleMetrics);
     setTitleNames(titleNames);
 
-    const labels = Object.keys(titleMetrics).map(titleNum => {
-      const fullTitle = titleNames[titleNum] || titleNum;
-      const departmentName = fullTitle.split("—")[1]?.trim() || fullTitle;
-      return departmentName;
-    });
-
+    // Create chart data
+    const labels = Object.keys(titleMetrics);
     console.log('Labels:', labels);
 
-    const values = labels.map((title) => {
-      const titleNum = title.split("—")[0].trim();
-      const metrics = titleMetrics[titleNum];
-      if (!metrics) return 0;
-
+    const values = labels.map(titleNum => {
       switch (selectedMetric) {
         case "wordCount":
-          return metrics.wordCount;
+          return titleMetrics[titleNum].wordCount;
         case "sectionCount":
-          return metrics.sectionCount;
+          return titleMetrics[titleNum].sectionCount;
         case "partCount":
-          return metrics.partCount;
+          return titleMetrics[titleNum].partCount;
         case "avgWordsPerSection":
-          const sections = metrics.sectionCount || 1;
-          return (metrics.wordCount / sections).toFixed(2);
+          return titleMetrics[titleNum].sectionCount > 0 
+            ? Math.round(titleMetrics[titleNum].wordCount / titleMetrics[titleNum].sectionCount)
+            : 0;
         default:
           return 0;
       }
     });
-
     console.log('Values:', values);
 
-    const maxWordCount = Math.max(...values);
     const getColor = (wordCount) => {
-      const mediumThreshold = maxWordCount * 0.75;
-      const lowThreshold = maxWordCount * 0.25;
-
-      if (wordCount === maxWordCount) {
-        return 'var(--primary-color)';
-      }
-
-      if (wordCount >= lowThreshold && wordCount < mediumThreshold) {
-        return 'var(--primary-hover)';
-      }
-
-      if (wordCount < lowThreshold) {
-        return 'var(--text-secondary)';
-      }
-
-      return 'var(--primary-color)';
+      const maxWords = Math.max(...values);
+      const ratio = wordCount / maxWords;
+      return `rgba(255, 255, 255, ${0.2 + ratio * 0.8})`;
     };
 
-    const backgroundColors = values.map(getColor);
-
-    const newChartData = {
-      labels,
+    const chartData = {
+      labels: labels.map(titleNum => titleNames[titleNum]),
       datasets: [
         {
           label: getMetricLabel(selectedMetric),
           data: values,
-          backgroundColor: backgroundColors,
-          borderColor: 'var(--border-color)',
-          borderWidth: 1
-        }
-      ]
+          backgroundColor: values.map(getColor),
+          borderColor: 'var(--text-light)',
+          borderWidth: 1,
+        },
+      ],
     };
 
-    console.log('Setting chart data:', newChartData);
-    setChartData(newChartData);
+    console.log('Setting chart data:', chartData);
+    setChartData(chartData);
   }, [allData, selectedMetric]);
 
   const getMetricLabel = (metric) => {

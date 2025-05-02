@@ -152,35 +152,50 @@ const TimeSeriesChart = () => {
       }
     });
 
-    // Calculate changes over time for each department
-    const datasets = Object.entries(departmentData).map(([department, timeData]) => {
-      const points = timeLabels.map((date, index) => {
-        if (index === 0) return { x: new Date(date).getTime(), y: 0 };
-        
-        const prevDate = timeLabels[index - 1];
-        const currentValue = timeData[date][selectedMetric];
-        const prevValue = timeData[prevDate][selectedMetric];
-        const change = currentValue - prevValue;
-        
+    // Create scatter plot data
+    const datasets = Object.entries(departmentData).map(([department, timeData], index) => {
+      const points = Object.entries(timeData).map(([date, metrics]) => {
+        let value;
+        switch (selectedMetric) {
+          case "wordCount":
+            value = metrics.wordCount;
+            break;
+          case "sectionCount":
+            value = metrics.sectionCount;
+            break;
+          case "partCount":
+            value = metrics.partCount;
+            break;
+          case "avgWordsPerSection":
+            value = metrics.sectionCount > 0 
+              ? Math.round(metrics.wordCount / metrics.sectionCount)
+              : 0;
+            break;
+          default:
+            value = 0;
+        }
         return {
           x: new Date(date).getTime(),
-          y: change
+          y: value
         };
       });
 
       return {
         label: department,
         data: points,
-        backgroundColor: '#0066cc',
+        backgroundColor: `hsla(${(index * 137.5) % 360}, 70%, 50%, 0.8)`,
+        borderColor: `hsla(${(index * 137.5) % 360}, 70%, 50%, 1)`,
         pointRadius: 6,
         pointHoverRadius: 8
       };
     });
 
-    setChartData({
+    const chartData = {
       labels: timeLabels,
       datasets
-    });
+    };
+
+    setChartData(chartData);
   }, [data, selectedTitle, selectedMetric, timePeriod]);
 
   const chartOptions = {
