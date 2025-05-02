@@ -8,10 +8,12 @@ const API_URL = process.env.REACT_APP_API_URL || 'https://ecfr-analyzer-staging-
 
 const TimeSeriesChart = () => {
   const [data, setData] = useState([]);
+  const [selectedTitle, setSelectedTitle] = useState("All Titles");
   const [selectedMetric, setSelectedMetric] = useState("wordCount");
   const [timePeriod, setTimePeriod] = useState("Monthly");
   const [chartData, setChartData] = useState(null);
   const [error, setError] = useState(null);
+  const [titles, setTitles] = useState([]);
 
   useEffect(() => {
     console.log('Fetching data from:', `${API_URL}/small_summary.json`);
@@ -36,6 +38,10 @@ const TimeSeriesChart = () => {
           throw new Error('Invalid data format: expected an array');
         }
         setData(json);
+        
+        // Extract unique titles
+        const uniqueTitles = [...new Set(json.map(item => item.title_number))];
+        setTitles(uniqueTitles);
         setError(null);
       })
       .catch((error) => {
@@ -50,35 +56,14 @@ const TimeSeriesChart = () => {
       return;
     }
 
-    // Group data by department
+    // Filter data by selected title if not "All Titles"
+    const filteredData = selectedTitle === "All Titles" 
+      ? data 
+      : data.filter(item => item.title_number === selectedTitle);
+
+    // Group data by department and time period
     const departmentData = {};
-    data.forEach(entry => {
-      if (entry.title_number) {
-        const titleNum = entry.title_number.split("—")[0].trim();
-        const departmentName = entry.title_number.split("—")[1]?.trim() || titleNum;
-        
-        if (!departmentData[departmentName]) {
-          departmentData[departmentName] = {
-            wordCount: 0,
-            sectionCount: 0,
-            partCount: 0
-          };
-        }
-
-        if (entry.label) {
-          const labelWords = entry.label.trim().split(/\s+/).length;
-          departmentData[departmentName].wordCount += labelWords;
-        }
-
-        if (entry.type === "section") {
-          departmentData[departmentName].sectionCount += 1;
-        }
-
-        if (entry.type === "part") {
-          departmentData[departmentName].partCount += 1;
-        }
-      }
-    });
+    const timePeriods = {};
 
     // Create time periods for the last 50 years
     const endDate = new Date();
@@ -86,8 +71,6 @@ const TimeSeriesChart = () => {
     startDate.setFullYear(startDate.getFullYear() - 50);
 
     let timeLabels = [];
-    let timeData = {};
-
     switch (timePeriod) {
       case "Daily":
         for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
@@ -118,33 +101,63 @@ const TimeSeriesChart = () => {
         break;
     }
 
-    // Create datasets for each department
-    const datasets = Object.entries(departmentData).map(([department, metrics]) => {
-      let value;
-      switch (selectedMetric) {
-        case "wordCount":
-          value = metrics.wordCount;
-          break;
-        case "sectionCount":
-          value = metrics.sectionCount;
-          break;
-        case "partCount":
-          value = metrics.partCount;
-          break;
-        case "avgWordsPerSection":
-          value = metrics.sectionCount ? (metrics.wordCount / metrics.sectionCount).toFixed(2) : 0;
-          break;
-        default:
-          value = 0;
+    // Process data for each department and time period
+    filteredData.forEach(entry => {
+      if (entry.title_number) {
+        const titleNum = entry.title_number.split("—")[0].trim();
+        const departmentName = entry.title_number.split("—")[1]?.trim() || titleNum;
+        
+        if (!departmentData[departmentName]) {
+          departmentData[departmentName] = {};
+          timeLabels.forEach(date => {
+            departmentData[departmentName][date] = {
+              wordCount: 0,
+              sectionCount: 0,
+              partCount: 0
+            };
+          });
+        }
+
+        const entryDate = new Date(entry.date || entry.created_at).toISOString().split('T')[0];
+        const closestTimeLabel = timeLabels.reduce((prev, curr) => {
+          return Math.abs(new Date(curr) - new Date(entryDate)) < Math.abs(new Date(prev) - new Date(entryDate)) ? curr : prev;
+        });
+
+        if (entry.label) {
+          const labelWords = entry.label.trim().split(/\s+/).length;
+          departmentData[departmentName][closestTimeLabel].wordCount += labelWords;
+        }
+
+        if (entry.type === "section") {
+          departmentData[departmentName][closestTimeLabel].sectionCount += 1;
+        }
+
+        if (entry.type === "part") {
+          departmentData[departmentName][closestTimeLabel].partCount += 1;
+        }
       }
+    });
+
+    // Calculate changes over time for each department
+    const datasets = Object.entries(departmentData).map(([department, timeData]) => {
+      const points = timeLabels.map((date, index) => {
+        if (index === 0) return { x: new Date(date).getTime(), y: 0 };
+        
+        const prevDate = timeLabels[index - 1];
+        const currentValue = timeData[date][selectedMetric];
+        const prevValue = timeData[prevDate][selectedMetric];
+        const change = currentValue - prevValue;
+        
+        return {
+          x: new Date(date).getTime(),
+          y: change
+        };
+      });
 
       return {
         label: department,
-        data: timeLabels.map((date, index) => ({
-          x: index,
-          y: value
-        })),
-        backgroundColor: `hsl(${Math.random() * 360}, 70%, 50%)`,
+        data: points,
+        backgroundColor: '#0066cc',
         pointRadius: 6,
         pointHoverRadius: 8
       };
@@ -154,15 +167,24 @@ const TimeSeriesChart = () => {
       labels: timeLabels,
       datasets
     });
-  }, [data, selectedMetric, timePeriod]);
+  }, [data, selectedTitle, selectedMetric, timePeriod]);
 
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
       x: {
-        type: 'linear',
-        position: 'bottom',
+        type: 'time',
+        time: {
+          unit: timePeriod.toLowerCase(),
+          displayFormats: {
+            daily: 'MMM d, yyyy',
+            weekly: 'MMM d, yyyy',
+            monthly: 'MMM yyyy',
+            quarterly: 'QQQ yyyy',
+            yearly: 'yyyy'
+          }
+        },
         title: {
           display: true,
           text: 'Time',
@@ -184,10 +206,10 @@ const TimeSeriesChart = () => {
         }
       },
       y: {
-        type: 'category',
+        type: 'linear',
         title: {
           display: true,
-          text: 'Department',
+          text: 'Regulatory Changes by Agency',
           color: 'var(--text-light)',
           font: {
             weight: 'bold',
@@ -229,31 +251,48 @@ const TimeSeriesChart = () => {
         bodyFont: {
           weight: 'bold',
           family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        },
+        callbacks: {
+          label: function(context) {
+            const value = context.raw.y;
+            const absValue = Math.abs(value);
+            let changeText = '';
+            
+            switch(selectedMetric) {
+              case 'wordCount':
+                changeText = value > 0 ? `Increased Total Word Count by ${absValue} words` : 
+                          value < 0 ? `Reduced Total Word Count by ${absValue} words` : 
+                          'No change in Total Word Count';
+                break;
+              case 'sectionCount':
+                changeText = value > 0 ? `Increased Number of Sections by ${absValue} sections` : 
+                          value < 0 ? `Reduced Number of Sections by ${absValue} sections` : 
+                          'No change in Number of Sections';
+                break;
+              case 'partCount':
+                changeText = value > 0 ? `Increased Number of Parts by ${absValue} parts` : 
+                          value < 0 ? `Reduced Number of Parts by ${absValue} parts` : 
+                          'No change in Number of Parts';
+                break;
+              case 'avgWordsPerSection':
+                changeText = value > 0 ? `Increased Average Words per Section by ${absValue}` : 
+                          value < 0 ? `Reduced Average Words per Section by ${absValue}` : 
+                          'No change in Average Words per Section';
+                break;
+            }
+            
+            return `${context.dataset.label}: ${changeText}`;
+          }
         }
       }
     }
   };
 
-  const getMetricLabel = (metric) => {
-    switch (metric) {
-      case "wordCount":
-        return "Total Word Count";
-      case "sectionCount":
-        return "Number of Sections";
-      case "partCount":
-        return "Number of Parts";
-      case "avgWordsPerSection":
-        return "Average Words per Section";
-      default:
-        return "";
-    }
-  };
-
   return (
     <div className="chart-container">
-      <h2 className="chart-title">Regulation Timeline Analysis</h2>
+      <h2 className="chart-title">Federal Regulations Changes Over Time</h2>
       <p className="chart-description">
-        View the evolution of regulations over time by department.
+        Track changes in federal regulations by agency. Negative values indicate reduction, positive values indicate increase.
       </p>
       <div className="chart-content">
         {error && (
@@ -263,6 +302,17 @@ const TimeSeriesChart = () => {
         )}
 
         <div className="chart-controls">
+          <select 
+            value={selectedTitle} 
+            onChange={(e) => setSelectedTitle(e.target.value)}
+            id="titleSelect"
+          >
+            <option value="All Titles">All Titles</option>
+            {titles.map(title => (
+              <option key={title} value={title}>{title}</option>
+            ))}
+          </select>
+
           <select 
             value={selectedMetric} 
             onChange={(e) => setSelectedMetric(e.target.value)}
