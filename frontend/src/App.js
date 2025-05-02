@@ -2,7 +2,6 @@ import React from 'react';
 import './App.css';
 import ChartDashboard from './ChartDashboard';
 import TimeSeriesChart from './TimeSeriesChart';
-import PDFGenerator from './PDFGenerator';
 
 function App() {
   return (
@@ -25,7 +24,6 @@ function App() {
         </nav>
       </header>
       <main className="App-main">
-        <PDFGenerator />
         <ChartDashboard />
         <TimeSeriesChart />
       </main>
