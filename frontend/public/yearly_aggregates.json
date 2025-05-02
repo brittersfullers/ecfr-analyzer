@@ -1,1 +1,44 @@
-{}
+[
+  {
+    "date": "2020-01-01",
+    "title": "Title 1",
+    "wordCount": 1000,
+    "sectionCount": 10,
+    "partCount": 2
+  },
+  {
+    "date": "2020-01-01",
+    "title": "Title 2",
+    "wordCount": 2000,
+    "sectionCount": 20,
+    "partCount": 4
+  },
+  {
+    "date": "2021-01-01",
+    "title": "Title 1",
+    "wordCount": 1500,
+    "sectionCount": 15,
+    "partCount": 3
+  },
+  {
+    "date": "2021-01-01",
+    "title": "Title 2",
+    "wordCount": 2500,
+    "sectionCount": 25,
+    "partCount": 5
+  },
+  {
+    "date": "2022-01-01",
+    "title": "Title 1",
+    "wordCount": 1800,
+    "sectionCount": 18,
+    "partCount": 4
+  },
+  {
+    "date": "2022-01-01",
+    "title": "Title 2",
+    "wordCount": 2800,
+    "sectionCount": 28,
+    "partCount": 6
+  }
+]

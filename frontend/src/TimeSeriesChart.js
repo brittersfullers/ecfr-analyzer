@@ -4,7 +4,8 @@ import { Chart, PointElement, CategoryScale, LinearScale, LineElement } from "ch
 
 Chart.register(PointElement, CategoryScale, LinearScale, LineElement);
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://ecfr-analyzer-staging-5b93a7fa9af7.herokuapp.com';
+// Use relative URL for local development
+const API_URL = process.env.REACT_APP_API_URL || '';
 
 const TimeSeriesChart = () => {
   const [selectedTitle, setSelectedTitle] = useState("All Titles");
@@ -14,36 +15,21 @@ const TimeSeriesChart = () => {
   const [availableTitles, setAvailableTitles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch and process data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`${API_URL}/yearly_aggregates.json`, {
-          mode: 'cors',
-          credentials: 'include',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+  // Process data into chart format
+  const processData = (data) => {
+    try {
+      const yearlyAggregates = {};
+      const titles = new Set();
+
+      // Process data in chunks to avoid blocking the main thread
+      const chunkSize = 1000;
+      for (let i = 0; i < data.length; i += chunkSize) {
+        const chunk = data.slice(i, i + chunkSize);
+        chunk.forEach(item => {
+          if (!item || !item.date || !item.title) {
+            console.warn('Skipping invalid item:', item);
+            return;
           }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!Array.isArray(data)) {
-          throw new Error('Invalid data format: expected an array');
-        }
-
-        // Process data into yearly aggregates
-        const yearlyAggregates = {};
-        const titles = new Set();
-
-        data.forEach(item => {
-          if (!item || !item.date || !item.title) return;
           
           const year = new Date(item.date).getFullYear();
           titles.add(item.title);
@@ -63,47 +49,85 @@ const TimeSeriesChart = () => {
           yearlyAggregates[year][item.title].sectionCount += Number(item.sectionCount) || 0;
           yearlyAggregates[year][item.title].partCount += Number(item.partCount) || 0;
         });
+      }
 
-        setAvailableTitles(Array.from(titles));
-        
-        // Prepare chart data
-        const years = Object.keys(yearlyAggregates).sort();
-        const datasets = [];
+      const availableTitlesArray = Array.from(titles);
+      setAvailableTitles(availableTitlesArray);
+      
+      // If selected title is not in available titles, reset to "All Titles"
+      if (selectedTitle !== "All Titles" && !availableTitlesArray.includes(selectedTitle)) {
+        setSelectedTitle("All Titles");
+      }
+      
+      const years = Object.keys(yearlyAggregates).sort();
+      const datasets = [];
 
-        if (selectedTitle === "All Titles") {
-          // Aggregate data for all titles
-          const allTitlesData = years.map(year => {
-            return Object.values(yearlyAggregates[year]).reduce((acc, titleData) => {
-              return {
-                wordCount: acc.wordCount + titleData.wordCount,
-                sectionCount: acc.sectionCount + titleData.sectionCount,
-                partCount: acc.partCount + titleData.partCount
-              };
-            }, { wordCount: 0, sectionCount: 0, partCount: 0 });
-          });
-
-          datasets.push({
-            label: "All Titles",
-            data: allTitlesData.map(data => data[selectedMetric]),
-            borderColor: '#5A91EE',
-            backgroundColor: '#5A91EE',
-            tension: 0.1
-          });
-        } else {
-          // Data for selected title
-          datasets.push({
-            label: selectedTitle,
-            data: years.map(year => yearlyAggregates[year][selectedTitle]?.[selectedMetric] || 0),
-            borderColor: '#5A91EE',
-            backgroundColor: '#5A91EE',
-            tension: 0.1
-          });
-        }
-
-        setChartData({
-          labels: years,
-          datasets
+      if (selectedTitle === "All Titles") {
+        const allTitlesData = years.map(year => {
+          return Object.values(yearlyAggregates[year]).reduce((acc, titleData) => {
+            return {
+              wordCount: acc.wordCount + titleData.wordCount,
+              sectionCount: acc.sectionCount + titleData.sectionCount,
+              partCount: acc.partCount + titleData.partCount
+            };
+          }, { wordCount: 0, sectionCount: 0, partCount: 0 });
         });
+
+        datasets.push({
+          label: "All Titles",
+          data: allTitlesData.map(data => data[selectedMetric]),
+          borderColor: '#5A91EE',
+          backgroundColor: '#5A91EE',
+          tension: 0.1
+        });
+      } else {
+        const titleData = years.map(year => {
+          const yearData = yearlyAggregates[year][selectedTitle];
+          return yearData ? yearData[selectedMetric] : 0;
+        });
+
+        datasets.push({
+          label: selectedTitle,
+          data: titleData,
+          borderColor: '#5A91EE',
+          backgroundColor: '#5A91EE',
+          tension: 0.1
+        });
+      }
+
+      setChartData({
+        labels: years,
+        datasets
+      });
+    } catch (error) {
+      console.error('Error processing data:', error);
+      setError('Error processing data. Please try again later.');
+    }
+  };
+
+  // Fetch and process data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/yearly_aggregates.json', {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!Array.isArray(data) || data.length === 0) {
+          throw new Error('No data available');
+        }
+        
+        processData(data);
         setError(null);
       } catch (error) {
         console.error('Error loading data:', error);
@@ -141,10 +165,6 @@ const TimeSeriesChart = () => {
     }
   };
 
-  if (error) {
-    return <div className="error-message">{error}</div>;
-  }
-
   if (isLoading) {
     return <div className="loading-message">Loading data...</div>;
   }
@@ -154,11 +174,31 @@ const TimeSeriesChart = () => {
   }
 
   return (
-    <div className="chart-container">
-      <div className="chart-controls">
+    <div className="chart-container" style={{ 
+      height: '600px',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative',
+      padding: '1rem'
+    }}>
+      {error && <div className="warning-message">{error}</div>}
+      <div className="chart-controls" style={{ 
+        marginBottom: '1rem',
+        display: 'flex',
+        gap: '1rem',
+        alignItems: 'center'
+      }}>
         <select 
+          id="title-select"
+          name="title"
           value={selectedTitle} 
           onChange={(e) => setSelectedTitle(e.target.value)}
+          aria-label="Select Title"
+          style={{
+            padding: '0.5rem',
+            borderRadius: '4px',
+            border: '1px solid #ccc'
+          }}
         >
           <option value="All Titles">All Titles</option>
           {availableTitles.map(title => (
@@ -167,8 +207,16 @@ const TimeSeriesChart = () => {
         </select>
         
         <select 
+          id="metric-select"
+          name="metric"
           value={selectedMetric} 
           onChange={(e) => setSelectedMetric(e.target.value)}
+          aria-label="Select Metric"
+          style={{
+            padding: '0.5rem',
+            borderRadius: '4px',
+            border: '1px solid #ccc'
+          }}
         >
           <option value="wordCount">Word Count</option>
           <option value="sectionCount">Section Count</option>
@@ -176,7 +224,11 @@ const TimeSeriesChart = () => {
         </select>
       </div>
       
-      <div className="chart-wrapper">
+      <div className="chart-wrapper" style={{ 
+        height: '500px',
+        position: 'relative',
+        width: '100%'
+      }}>
         <Line data={chartData} options={chartOptions} />
       </div>
     </div>

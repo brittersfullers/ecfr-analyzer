@@ -17,31 +17,35 @@ const s3 = new AWS.S3({
 // Determine environment prefix
 const ENV_PREFIX = process.env.NODE_ENV === 'production' ? 'prod/' : 'staging/';
 
-// Enable CORS with specific configuration
-const allowedOrigins = [
-  'https://ecfr-analyzer-staging-5b93a7fa9af7.herokuapp.com',
-  'http://localhost:3000',
-  'http://localhost:3001'
-];
-
 // CORS configuration
-app.use(cors({
+const corsOptions = {
   origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      console.log('Rejected CORS request from origin:', origin);
-      return callback(new Error('Not allowed by CORS'), false);
+    // In development, allow all origins
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
     }
-    console.log('Allowed CORS request from origin:', origin);
-    return callback(null, true);
+    
+    // In production, only allow specific origins
+    const allowedOrigins = [
+      'https://ecfr-analyzer-staging-5b93a7fa9af7.herokuapp.com',
+      'https://ecfr-analyzer.herokuapp.com',
+      'http://localhost:3000',
+      'http://localhost:3001'
+    ];
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
   },
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   exposedHeaders: ['Content-Range', 'X-Content-Range']
-}));
+};
+
+app.use(cors(corsOptions));
 
 // Logging middleware
 app.use((req, res, next) => {
@@ -90,6 +94,25 @@ app.get('/small_summary.json', async (req, res) => {
       key: `${process.env.NODE_ENV === 'production' ? 'prod/' : 'staging/'}small_summary.json`
     });
     res.status(500).json({ error: 'Failed to fetch data from S3', details: error.message });
+  }
+});
+
+// Endpoint for yearly_aggregates.json
+app.get('/yearly_aggregates.json', async (req, res) => {
+  try {
+    console.log('Attempting to fetch yearly_aggregates.json from S3...');
+    
+    const params = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: `${process.env.NODE_ENV === 'production' ? 'prod/' : 'staging/'}yearly_aggregates.json`
+    };
+    
+    const data = await s3.getObject(params).promise();
+    console.log('Successfully fetched yearly aggregates data from S3');
+    res.json(JSON.parse(data.Body.toString()));
+  } catch (error) {
+    console.error('Error fetching yearly aggregates:', error);
+    res.status(500).json({ error: 'Failed to fetch yearly aggregates data', details: error.message });
   }
 });
 

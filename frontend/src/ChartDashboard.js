@@ -89,33 +89,38 @@ const ChartDashboard = () => {
     const titleMetrics = {};
     const titleNames = {};
 
-    allData.forEach((entry) => {
-      if (entry.title_number) {
-        const titleNum = entry.title_number.split("—")[0].trim();
-        const fullTitle = entry.title_number.trim();
+    // Process data in chunks to avoid blocking the main thread
+    const chunkSize = 1000;
+    for (let i = 0; i < allData.length; i += chunkSize) {
+      const chunk = allData.slice(i, i + chunkSize);
+      chunk.forEach((entry) => {
+        if (entry.title_number) {
+          const titleNum = entry.title_number.split("—")[0].trim();
+          const fullTitle = entry.title_number.trim();
 
-        if (!titleMetrics[titleNum]) {
-          titleMetrics[titleNum] = { wordCount: 0, sectionCount: 0, partCount: 0 };
-        }
+          if (!titleMetrics[titleNum]) {
+            titleMetrics[titleNum] = { wordCount: 0, sectionCount: 0, partCount: 0 };
+          }
 
-        if (!titleNames[titleNum]) {
-          titleNames[titleNum] = fullTitle;
-        }
+          if (!titleNames[titleNum]) {
+            titleNames[titleNum] = fullTitle;
+          }
 
-        if (entry.label) {
-          const labelWords = entry.label.trim().split(/\s+/).length;
-          titleMetrics[titleNum].wordCount += labelWords;
-        }
+          if (entry.label) {
+            const labelWords = entry.label.trim().split(/\s+/).length;
+            titleMetrics[titleNum].wordCount += labelWords;
+          }
 
-        if (entry.type === "section") {
-          titleMetrics[titleNum].sectionCount += 1;
-        }
+          if (entry.type === "section") {
+            titleMetrics[titleNum].sectionCount += 1;
+          }
 
-        if (entry.type === "part") {
-          titleMetrics[titleNum].partCount += 1;
+          if (entry.type === "part") {
+            titleMetrics[titleNum].partCount += 1;
+          }
         }
-      }
-    });
+      });
+    }
 
     return { titleMetrics, titleNames };
   }, [allData]);
