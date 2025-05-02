@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Scatter } from "react-chartjs-2";
-import { Chart, PointElement, CategoryScale, LinearScale } from "chart.js";
+import { Chart, PointElement, CategoryScale, LinearScale, TimeScale } from "chart.js";
 
-Chart.register(PointElement, CategoryScale, LinearScale);
+Chart.register(PointElement, CategoryScale, LinearScale, TimeScale);
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://ecfr-analyzer-staging-5b93a7fa9af7.herokuapp.com';
 
