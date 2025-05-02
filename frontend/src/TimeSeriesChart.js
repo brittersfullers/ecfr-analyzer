@@ -21,36 +21,12 @@ const TimeSeriesChart = () => {
       const yearlyAggregates = {};
       const titles = new Set();
 
-      // Process data in chunks to avoid blocking the main thread
-      const chunkSize = 1000;
-      for (let i = 0; i < data.length; i += chunkSize) {
-        const chunk = data.slice(i, i + chunkSize);
-        chunk.forEach(item => {
-          if (!item || !item.date || !item.title) {
-            console.warn('Skipping invalid item:', item);
-            return;
-          }
-          
-          const year = new Date(item.date).getFullYear();
-          const title = item.title.trim();
-          titles.add(title);
-
-          if (!yearlyAggregates[year]) {
-            yearlyAggregates[year] = {};
-          }
-          if (!yearlyAggregates[year][title]) {
-            yearlyAggregates[year][title] = {
-              wordCount: 0,
-              sectionCount: 0,
-              partCount: 0
-            };
-          }
-          
-          yearlyAggregates[year][title].wordCount += Number(item.wordCount) || 0;
-          yearlyAggregates[year][title].sectionCount += Number(item.sectionCount) || 0;
-          yearlyAggregates[year][title].partCount += Number(item.partCount) || 0;
-        });
-      }
+      // First pass: collect all unique titles
+      data.forEach(item => {
+        if (item && item.title) {
+          titles.add(item.title.trim());
+        }
+      });
 
       // Sort titles numerically
       const availableTitlesArray = Array.from(titles).sort((a, b) => {
@@ -61,6 +37,32 @@ const TimeSeriesChart = () => {
       
       setAvailableTitles(availableTitlesArray);
       
+      // Second pass: process the data
+      data.forEach(item => {
+        if (!item || !item.date || !item.title) {
+          console.warn('Skipping invalid item:', item);
+          return;
+        }
+        
+        const year = new Date(item.date).getFullYear();
+        const title = item.title.trim();
+
+        if (!yearlyAggregates[year]) {
+          yearlyAggregates[year] = {};
+        }
+        if (!yearlyAggregates[year][title]) {
+          yearlyAggregates[year][title] = {
+            wordCount: 0,
+            sectionCount: 0,
+            partCount: 0
+          };
+        }
+        
+        yearlyAggregates[year][title].wordCount += Number(item.wordCount) || 0;
+        yearlyAggregates[year][title].sectionCount += Number(item.sectionCount) || 0;
+        yearlyAggregates[year][title].partCount += Number(item.partCount) || 0;
+      });
+
       // If selected title is not in available titles, reset to "All Titles"
       if (selectedTitle !== "All Titles" && !availableTitlesArray.includes(selectedTitle)) {
         setSelectedTitle("All Titles");
