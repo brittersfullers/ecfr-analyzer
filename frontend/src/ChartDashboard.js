@@ -122,7 +122,19 @@ const ChartDashboard = () => {
       });
     }
 
-    return { titleMetrics, titleNames };
+    // Sort titles numerically
+    const sortedTitleNums = Object.keys(titleMetrics).sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, ''));
+      const numB = parseInt(b.replace(/\D/g, ''));
+      return numA - numB;
+    });
+
+    const sortedTitleNames = {};
+    sortedTitleNums.forEach(titleNum => {
+      sortedTitleNames[titleNum] = titleNames[titleNum];
+    });
+
+    return { titleMetrics, titleNames: sortedTitleNames };
   }, [allData]);
 
   useEffect(() => {
