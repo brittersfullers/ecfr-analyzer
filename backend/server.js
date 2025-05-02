@@ -18,26 +18,8 @@ const s3 = new AWS.S3({
 const ENV_PREFIX = process.env.NODE_ENV === 'production' ? 'prod/' : 'staging/';
 
 // Enable CORS with specific configuration
-const allowedOrigins = [
-  'https://ecfr-analyzer-api2-8bddf33fb1bd.herokuapp.com',
-  'https://ecfr-analyzer-staging.herokuapp.com',
-  'https://ecfr-analyzer-staging-5b93a7fa9af7.herokuapp.com',  // Add the actual frontend URL
-  'http://localhost:3000'  // For local development
-];
-
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      console.log('Rejected CORS request from origin:', origin);
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    console.log('Allowed CORS request from origin:', origin);
-    return callback(null, true);
-  },
+  origin: '*',  // Allow all origins for now
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -47,6 +29,7 @@ app.use(cors({
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   console.log('Headers:', req.headers);
+  console.log('Origin:', req.headers.origin);
   next();
 });
 
@@ -63,9 +46,12 @@ app.get('/test', (req, res) => {
 app.get('/small_summary.json', async (req, res) => {
   try {
     console.log('Attempting to fetch small_summary.json from S3...');
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('S3 Bucket:', process.env.S3_BUCKET_NAME);
+    
     const params = {
       Bucket: process.env.S3_BUCKET_NAME,
-      Key: `${ENV_PREFIX}small_summary.json`
+      Key: `${process.env.NODE_ENV === 'production' ? 'prod/' : 'staging/'}small_summary.json`
     };
     
     console.log('S3 params:', { ...params, secretAccessKey: '[REDACTED]' });
@@ -79,7 +65,8 @@ app.get('/small_summary.json', async (req, res) => {
       code: error.code,
       statusCode: error.statusCode,
       region: process.env.AWS_REGION,
-      bucket: process.env.S3_BUCKET_NAME
+      bucket: process.env.S3_BUCKET_NAME,
+      key: `${process.env.NODE_ENV === 'production' ? 'prod/' : 'staging/'}small_summary.json`
     });
     res.status(500).json({ error: 'Failed to fetch data from S3', details: error.message });
   }
