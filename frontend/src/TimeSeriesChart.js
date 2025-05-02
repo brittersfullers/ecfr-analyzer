@@ -15,29 +15,66 @@ const TimeSeriesChart = () => {
   const [availableTitles, setAvailableTitles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch and process data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/yearly_aggregates.json', {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!Array.isArray(data) || data.length === 0) {
+          throw new Error('No data available');
+        }
+
+        // First, collect all unique titles
+        const titles = new Set();
+        data.forEach(item => {
+          if (item && item.title) {
+            titles.add(item.title.trim());
+          }
+        });
+
+        // Sort titles numerically
+        const availableTitlesArray = Array.from(titles).sort((a, b) => {
+          const numA = parseInt(a.replace(/\D/g, ''));
+          const numB = parseInt(b.replace(/\D/g, ''));
+          return numA - numB;
+        });
+
+        // Set available titles first
+        setAvailableTitles(availableTitlesArray);
+        
+        // Then process the data
+        processData(data);
+        setError(null);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        setError('Failed to load data. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [selectedTitle, selectedMetric]);
+
   // Process data into chart format
   const processData = (data) => {
     try {
       const yearlyAggregates = {};
-      const titles = new Set();
 
-      // First pass: collect all unique titles
-      data.forEach(item => {
-        if (item && item.title) {
-          titles.add(item.title.trim());
-        }
-      });
-
-      // Sort titles numerically
-      const availableTitlesArray = Array.from(titles).sort((a, b) => {
-        const numA = parseInt(a.replace(/\D/g, ''));
-        const numB = parseInt(b.replace(/\D/g, ''));
-        return numA - numB;
-      });
-      
-      setAvailableTitles(availableTitlesArray);
-      
-      // Second pass: process the data
+      // Process the data
       data.forEach(item => {
         if (!item || !item.date || !item.title) {
           console.warn('Skipping invalid item:', item);
@@ -63,11 +100,6 @@ const TimeSeriesChart = () => {
         yearlyAggregates[year][title].partCount += Number(item.partCount) || 0;
       });
 
-      // If selected title is not in available titles, reset to "All Titles"
-      if (selectedTitle !== "All Titles" && !availableTitlesArray.includes(selectedTitle)) {
-        setSelectedTitle("All Titles");
-      }
-      
       const years = Object.keys(yearlyAggregates).sort();
       const datasets = [];
 
@@ -117,41 +149,6 @@ const TimeSeriesChart = () => {
       setError('Error processing data. Please try again later.');
     }
   };
-
-  // Fetch and process data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch('/yearly_aggregates.json', {
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!Array.isArray(data) || data.length === 0) {
-          throw new Error('No data available');
-        }
-        
-        processData(data);
-        setError(null);
-      } catch (error) {
-        console.error('Error loading data:', error);
-        setError('Failed to load data. Please try again later.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [selectedTitle, selectedMetric]);
 
   const getMetricLabel = (metric) => {
     switch (metric) {
