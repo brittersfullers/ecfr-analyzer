@@ -27,12 +27,12 @@ body {
 
 .App-logo {
   height: 40px;
-  width: 120px;
+  width: 40px;
   pointer-events: none;
   margin: 0;
   display: block;
   background-color: transparent;
-  filter: brightness(0) invert(1);
+  filter: none;
 }
 
 .App-header {
