@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <text x="10" y="28" font-family="Arial, sans-serif" font-size="24" font-weight="600" fill="currentColor">eCFR</text>
-  <text x="60" y="28" font-family="Arial, sans-serif" font-size="24" font-weight="400" fill="currentColor">Analyzer</text>
+  <path d="M10 10h20v20H10z" fill="currentColor"/>
+  <path d="M40 10h20v20H40z" fill="currentColor"/>
+  <path d="M70 10h20v20H70z" fill="currentColor"/>
+  <path d="M100 10h10v20h-10z" fill="currentColor"/>
 </svg>

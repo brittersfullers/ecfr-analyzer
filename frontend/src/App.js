@@ -7,7 +7,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src="/logo.svg" className="App-logo" alt="eCFR Analyzer Logo" />
+        <img src={process.env.PUBLIC_URL + '/logo.svg'} className="App-logo" alt="eCFR Analyzer Logo" />
         <nav className="App-nav">
           <a href="/">Home</a>
           <a href="/regulations">Regulations</a>
