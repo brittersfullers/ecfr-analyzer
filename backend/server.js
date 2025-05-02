@@ -25,23 +25,23 @@ const allowedOrigins = [
 ];
 
 // CORS configuration
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  console.log('Request origin:', origin);
-  
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  }
-  
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      console.log('Rejected CORS request from origin:', origin);
+      return callback(new Error('Not allowed by CORS'), false);
+    }
+    console.log('Allowed CORS request from origin:', origin);
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
+}));
 
 // Logging middleware
 app.use((req, res, next) => {
