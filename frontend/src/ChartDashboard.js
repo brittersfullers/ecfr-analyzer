@@ -18,22 +18,36 @@ const chartOptions = {
         font: {
           size: 10
         },
-        padding: 10
+        padding: 10,
+        color: 'var(--text-light)'
       },
       grid: {
-        display: false
+        color: 'var(--border-color)'
       }
     },
     y: {
       beginAtZero: true,
       grid: {
-        color: 'rgba(0, 0, 0, 0.1)'
+        color: 'var(--border-color)'
+      },
+      ticks: {
+        color: 'var(--text-light)'
       }
     }
   },
   plugins: {
     legend: {
-      display: false
+      display: false,
+      labels: {
+        color: 'var(--text-light)'
+      }
+    },
+    tooltip: {
+      backgroundColor: 'var(--card-bg)',
+      titleColor: 'var(--text-light)',
+      bodyColor: 'var(--text-light)',
+      borderColor: 'var(--border-color)',
+      borderWidth: 1
     }
   }
 };
@@ -41,7 +55,7 @@ const chartOptions = {
 const ChartDashboard = () => {
   const [allData, setAllData] = useState([]);
   const [selectedMetric, setSelectedMetric] = useState("wordCount");
-  const [selectedTitle, setSelectedTitle] = useState("All Titles");  // Single-select version
+  const [selectedTitle, setSelectedTitle] = useState("All Titles");
   const [chartData, setChartData] = useState(null);
   const [titleNames, setTitleNames] = useState({});
   const [error, setError] = useState(null);
@@ -57,6 +71,7 @@ const ChartDashboard = () => {
       }
     })
       .then((response) => {
+        console.log('Response status:', response.status);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -64,6 +79,9 @@ const ChartDashboard = () => {
       })
       .then((json) => {
         console.log('Data received:', json);
+        if (!Array.isArray(json)) {
+          throw new Error('Invalid data format: expected an array');
+        }
         setAllData(json);
         setError(null);
       })
@@ -74,31 +92,33 @@ const ChartDashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (!allData.length) return;
+    console.log('Processing data for chart...');
+    if (!Array.isArray(allData) || allData.length === 0) {
+      console.log('No data to process');
+      return;
+    }
 
     const titleMetrics = {};
-    const titleNames = {}; // Local titleNames variable
+    const titleNames = {};
 
     allData.forEach((entry) => {
       if (entry.title_number) {
         const titleNum = entry.title_number.split("—")[0].trim();
-        const fullTitle = entry.title_number.trim(); // Full Title like "7—Agriculture"
+        const fullTitle = entry.title_number.trim();
 
         if (!titleMetrics[titleNum]) {
           titleMetrics[titleNum] = { wordCount: 0, sectionCount: 0, partCount: 0 };
         }
 
         if (!titleNames[titleNum]) {
-          titleNames[titleNum] = fullTitle;  // Map the full Title name to the number
+          titleNames[titleNum] = fullTitle;
         }
 
-        // Count words from the label text
         if (entry.label) {
           const labelWords = entry.label.trim().split(/\s+/).length;
           titleMetrics[titleNum].wordCount += labelWords;
         }
 
-        // Continue counting sections and parts
         if (entry.type === "section") {
           titleMetrics[titleNum].sectionCount += 1;
         }
@@ -109,85 +129,75 @@ const ChartDashboard = () => {
       }
     });
 
+    console.log('Title metrics:', titleMetrics);
     setTitleNames(titleNames);
 
     let labels = Object.keys(titleMetrics).map(titleNum => {
       const fullTitle = titleNames[titleNum] || titleNum;
-      // Remove the number prefix and dash, then trim
       const departmentName = fullTitle.split("—")[1]?.trim() || fullTitle;
       return departmentName;
     });
 
+    console.log('Labels:', labels);
+
     let values = labels.map((title) => {
       const titleNum = title.split("—")[0].trim();
       const metrics = titleMetrics[titleNum];
-      // Safe check for undefined metrics
       if (!metrics) return 0;
 
-      if (selectedMetric === "wordCount") {
-        return metrics.wordCount;
+      switch (selectedMetric) {
+        case "wordCount":
+          return metrics.wordCount;
+        case "sectionCount":
+          return metrics.sectionCount;
+        case "partCount":
+          return metrics.partCount;
+        case "avgWordsPerSection":
+          const sections = metrics.sectionCount || 1;
+          return (metrics.wordCount / sections).toFixed(2);
+        default:
+          return 0;
       }
-      if (selectedMetric === "sectionCount") {
-        return metrics.sectionCount;
-      }
-      if (selectedMetric === "partCount") {
-        return metrics.partCount;
-      }
-      if (selectedMetric === "avgWordsPerSection") {
-        const sections = metrics.sectionCount || 1; // prevent division by zero
-        return (metrics.wordCount / sections).toFixed(2);
-      }
-      return 0;
     });
 
-    // Adjust filtering logic for selectedTitle
-    if (selectedTitle !== "All Titles") {
-      const selectedTitleNum = selectedTitle.split("—")[0].trim();
-      const selectedMetrics = titleMetrics[selectedTitleNum];
-      
-      if (selectedMetrics) {
-        labels = [selectedTitle];
-        values = [selectedMetric === "wordCount" ? selectedMetrics.wordCount :
-                 selectedMetric === "sectionCount" ? selectedMetrics.sectionCount :
-                 selectedMetric === "partCount" ? selectedMetrics.partCount :
-                 selectedMetric === "avgWordsPerSection" ? (selectedMetrics.wordCount / (selectedMetrics.sectionCount || 1)).toFixed(2) : 0];
-      }
-    }
+    console.log('Values:', values);
 
-    // Apply the color gradient logic
-    const maxWordCount = Math.max(...values); // Get the max word count
+    const maxWordCount = Math.max(...values);
     const getColor = (wordCount) => {
       const mediumThreshold = maxWordCount * 0.75;
       const lowThreshold = maxWordCount * 0.25;
 
       if (wordCount === maxWordCount) {
-        return `rgb(255, 99, 71)`; // Tomato red
+        return 'var(--primary-color)';
       }
 
       if (wordCount >= lowThreshold && wordCount < mediumThreshold) {
-        return `rgb(255, 223, 77)`; // Soft Yellow
+        return 'var(--primary-hover)';
       }
 
       if (wordCount < lowThreshold) {
-        return `rgb(34, 139, 34)`; // Dark Green
+        return 'var(--text-secondary)';
       }
 
-      return `rgb(255, 99, 71)`; // Red for the largest
+      return 'var(--primary-color)';
     };
 
-    const backgroundColors = values.map(getColor); // Apply color gradient for each bar
+    const backgroundColors = values.map(getColor);
 
-    setChartData({
+    const newChartData = {
       labels,
       datasets: [
         {
           label: getMetricLabel(selectedMetric),
           data: values,
-          backgroundColor: backgroundColors,  // Apply the gradient
+          backgroundColor: backgroundColors,
         },
       ],
-    });
-  }, [allData, selectedMetric, selectedTitle]);
+    };
+
+    console.log('Setting chart data:', newChartData);
+    setChartData(newChartData);
+  }, [allData, selectedMetric]);
 
   const getMetricLabel = (metric) => {
     switch (metric) {
@@ -201,49 +211,6 @@ const ChartDashboard = () => {
         return "Average Words per Section";
       default:
         return "";
-    }
-  };
-
-  // Define chart options
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: {
-        ticks: {
-          maxRotation: 90,
-          minRotation: 90,
-          font: {
-            size: 10
-          },
-          padding: 20,
-          color: 'var(--text-light)'
-        },
-        grid: {
-          color: 'var(--border-color)'
-        }
-      },
-      y: {
-        beginAtZero: true,
-        grid: {
-          color: 'var(--border-color)'
-        },
-        ticks: {
-          color: 'var(--text-light)'
-        }
-      }
-    },
-    plugins: {
-      legend: {
-        display: false
-      },
-      tooltip: {
-        backgroundColor: 'var(--card-bg)',
-        titleColor: 'var(--text-light)',
-        bodyColor: 'var(--text-light)',
-        borderColor: 'var(--border-color)',
-        borderWidth: 1
-      }
     }
   };
 
@@ -289,7 +256,9 @@ const ChartDashboard = () => {
               options={chartOptions}
             />
           </div>
-        ) : <p>Loading chart...</p>}
+        ) : (
+          <p style={{ color: 'var(--text-light)' }}>Loading chart...</p>
+        )}
       </div>
     </div>
   );
