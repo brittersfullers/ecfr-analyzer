@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Bar } from "react-chartjs-2";
 import { Chart, BarElement, CategoryScale, LinearScale } from "chart.js";
 
@@ -16,27 +16,28 @@ const chartOptions = {
         maxRotation: 45,
         minRotation: 45,
         font: {
+          family: '__Inter_d65c78, __Inter_Fallback_d65c78',
           size: 12,
-          weight: 'bold',
-          family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+          weight: '400'
         },
         padding: 10,
-        color: 'var(--text-light)'
+        color: 'rgb(249, 250, 251)'
       },
       grid: {
-        color: 'var(--border-color)'
+        color: 'rgba(249, 250, 251, 0.1)'
       }
     },
     y: {
       beginAtZero: true,
       grid: {
-        color: 'var(--border-color)'
+        color: 'rgba(249, 250, 251, 0.1)'
       },
       ticks: {
-        color: 'var(--text-light)',
+        color: 'rgb(249, 250, 251)',
         font: {
-          weight: 'bold',
-          family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+          family: '__Inter_d65c78, __Inter_Fallback_d65c78',
+          size: 12,
+          weight: '400'
         }
       }
     }
@@ -45,26 +46,27 @@ const chartOptions = {
     legend: {
       display: false,
       labels: {
-        color: 'var(--text-light)',
+        color: 'rgb(249, 250, 251)',
         font: {
-          weight: 'bold',
-          family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+          family: '__Inter_d65c78, __Inter_Fallback_d65c78',
+          size: 12,
+          weight: '400'
         }
       }
     },
     tooltip: {
-      backgroundColor: 'var(--card-bg)',
-      titleColor: 'var(--text-light)',
-      bodyColor: 'var(--text-light)',
-      borderColor: 'var(--border-color)',
-      borderWidth: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      titleColor: 'rgb(249, 250, 251)',
+      bodyColor: 'rgb(249, 250, 251)',
       titleFont: {
-        weight: 'bold',
-        family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        family: '__Inter_d65c78, __Inter_Fallback_d65c78',
+        size: 14,
+        weight: '700'
       },
       bodyFont: {
-        weight: 'bold',
-        family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        family: '__Inter_d65c78, __Inter_Fallback_d65c78',
+        size: 12,
+        weight: '400'
       }
     }
   }
@@ -77,54 +79,18 @@ const ChartDashboard = () => {
   const [chartData, setChartData] = useState(null);
   const [titleNames, setTitleNames] = useState({});
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    console.log('Fetching data from:', `${API_URL}/small_summary.json`);
-    fetch(`${API_URL}/small_summary.json`, {
-      mode: 'cors',
-      credentials: 'include',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    })
-      .then((response) => {
-        console.log('Response status:', response.status);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((json) => {
-        console.log('Data received:', json);
-        if (!Array.isArray(json)) {
-          throw new Error('Invalid data format: expected an array');
-        }
-        setAllData(json);
-        setError(null);
-      })
-      .catch((error) => {
-        console.error('Error fetching data:', error);
-        setError(error.message);
-      });
-  }, []);
-
-  useEffect(() => {
-    console.log('Processing data for chart...');
+  // Process data using useMemo to prevent unnecessary recalculations
+  const processedData = useMemo(() => {
     if (!Array.isArray(allData) || allData.length === 0) {
-      console.log('No data to process');
-      return;
+      return null;
     }
-
-    // Limit the number of items to process
-    const maxItems = 1000;
-    const limitedData = allData.slice(0, maxItems);
-    console.log('Processing', limitedData.length, 'items');
 
     const titleMetrics = {};
     const titleNames = {};
 
-    limitedData.forEach((entry) => {
+    allData.forEach((entry) => {
       if (entry.title_number) {
         const titleNum = entry.title_number.split("—")[0].trim();
         const fullTitle = entry.title_number.trim();
@@ -152,13 +118,55 @@ const ChartDashboard = () => {
       }
     });
 
-    console.log('Title metrics:', titleMetrics);
+    return { titleMetrics, titleNames };
+  }, [allData]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        console.log('Fetching data from:', `${API_URL}/small_summary.json`);
+        const response = await fetch(`${API_URL}/small_summary.json`, {
+          mode: 'cors',
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const json = await response.json();
+        console.log('Data received:', json);
+        
+        if (!Array.isArray(json)) {
+          throw new Error('Invalid data format: expected an array');
+        }
+
+        setAllData(json);
+        setError(null);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (!processedData) return;
+
+    const { titleMetrics, titleNames } = processedData;
     setTitleNames(titleNames);
 
-    // Create chart data
     const labels = Object.keys(titleMetrics);
-    console.log('Labels:', labels);
-
     const values = labels.map(titleNum => {
       switch (selectedMetric) {
         case "wordCount":
@@ -175,39 +183,27 @@ const ChartDashboard = () => {
           return 0;
       }
     });
-    console.log('Values:', values);
 
-    const getColor = (wordCount) => {
-      const maxWords = Math.max(...values);
-      const ratio = wordCount / maxWords;
-      return `rgba(255, 255, 255, ${0.2 + ratio * 0.8})`;
-    };
-
-    const chartData = {
+    setChartData({
       labels: labels.map(titleNum => titleNames[titleNum]),
-      datasets: [
-        {
-          label: getMetricLabel(selectedMetric),
-          data: values,
-          backgroundColor: values.map(getColor),
-          borderColor: 'var(--text-light)',
-          borderWidth: 1,
-        },
-      ],
-    };
-
-    console.log('Setting chart data:', chartData);
-    setChartData(chartData);
-  }, [allData, selectedMetric]);
+      datasets: [{
+        label: getMetricLabel(selectedMetric),
+        data: values,
+        backgroundColor: '#5A91EE',
+        borderColor: '#5A91EE',
+        borderWidth: 1,
+      }],
+    });
+  }, [processedData, selectedMetric]);
 
   const getMetricLabel = (metric) => {
     switch (metric) {
       case "wordCount":
-        return "Total Word Count per Title";
+        return "Total Word Count";
       case "sectionCount":
-        return "Number of Sections per Title";
+        return "Number of Sections";
       case "partCount":
-        return "Number of Parts per Title";
+        return "Number of Parts";
       case "avgWordsPerSection":
         return "Average Words per Section";
       default:
@@ -219,46 +215,38 @@ const ChartDashboard = () => {
     <div className="chart-container">
       <h2 className="chart-title">Regulation Analysis</h2>
       <p className="chart-description">
-        Select regulations from the dropdown to view their analysis.
+        Select a metric to view the analysis of regulations by title.
       </p>
       <div className="chart-content">
         {error && (
-          <div style={{ color: 'red', marginBottom: '1rem' }}>
-            Error loading data: {error}
+          <div className="error-message">
+            Error: {error}
           </div>
         )}
-
-        <div className="chart-controls">
-          <select value={selectedMetric} onChange={(e) => setSelectedMetric(e.target.value)} id="metricSelect">
-            <option value="wordCount">Total Word Count</option>
-            <option value="sectionCount">Number of Sections</option>
-            <option value="partCount">Number of Parts</option>
-            <option value="avgWordsPerSection">Average Words per Section</option>
-          </select>
-
-          <select 
-            value={selectedTitle} 
-            onChange={(e) => setSelectedTitle(e.target.value)}
-            id="titleSelect"
-          >
-            <option value="All Titles">All Titles</option>
-            {Object.entries(titleNames).map(([titleNum, fullTitle]) => (
-              <option key={titleNum} value={fullTitle}>
-                {fullTitle}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {chartData ? (
-          <div style={{ height: '500px', width: '100%' }}>
-            <Bar 
-              data={chartData} 
-              options={chartOptions}
-            />
+        {isLoading ? (
+          <div className="loading-message">
+            Loading data...
           </div>
         ) : (
-          <p style={{ color: 'var(--text-light)' }}>Loading chart...</p>
+          <>
+            <div className="chart-controls">
+              <select
+                value={selectedMetric}
+                onChange={(e) => setSelectedMetric(e.target.value)}
+                className="metric-select"
+              >
+                <option value="wordCount">Total Word Count</option>
+                <option value="sectionCount">Number of Sections</option>
+                <option value="partCount">Number of Parts</option>
+                <option value="avgWordsPerSection">Average Words per Section</option>
+              </select>
+            </div>
+            {chartData && (
+              <div style={{ height: '500px' }}>
+                <Bar data={chartData} options={chartOptions} />
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

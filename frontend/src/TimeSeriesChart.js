@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Scatter } from "react-chartjs-2";
 import { Chart, PointElement, CategoryScale, LinearScale, TimeScale } from "chart.js";
 import 'chartjs-adapter-date-fns';
@@ -14,62 +14,16 @@ const TimeSeriesChart = () => {
   const [timePeriod, setTimePeriod] = useState("Monthly");
   const [chartData, setChartData] = useState(null);
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [titles, setTitles] = useState([]);
 
-  useEffect(() => {
-    console.log('Fetching data from:', `${API_URL}/small_summary.json`);
-    fetch(`${API_URL}/small_summary.json`, {
-      mode: 'cors',
-      credentials: 'include',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    })
-      .then((response) => {
-        console.log('Response status:', response.status);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((json) => {
-        console.log('Data received:', json);
-        if (!Array.isArray(json)) {
-          throw new Error('Invalid data format: expected an array');
-        }
-        setData(json);
-        
-        // Extract unique titles
-        const uniqueTitles = [...new Set(json.map(item => item.title_number))];
-        setTitles(uniqueTitles);
-        setError(null);
-      })
-      .catch((error) => {
-        console.error('Error fetching data:', error);
-        setError(error.message);
-      });
-  }, []);
-
-  useEffect(() => {
+  // Process data using useMemo to prevent unnecessary recalculations
+  const processedData = useMemo(() => {
     if (!Array.isArray(data) || data.length === 0) {
-      console.log('No data to process');
-      return;
+      return null;
     }
 
-    // Limit the number of items to process
-    const maxItems = 1000;
-    const limitedData = data.slice(0, maxItems);
-
-    // Filter data by selected title if not "All Titles"
-    const filteredData = selectedTitle === "All Titles" 
-      ? limitedData 
-      : limitedData.filter(item => item.title_number === selectedTitle);
-
-    // Group data by department and time period
     const departmentData = {};
-
-    // Create time periods for the last 50 years
     const endDate = new Date();
     const startDate = new Date();
     startDate.setFullYear(startDate.getFullYear() - 50);
@@ -105,8 +59,7 @@ const TimeSeriesChart = () => {
         break;
     }
 
-    // Process data for each department and time period
-    filteredData.forEach(entry => {
+    data.forEach(entry => {
       if (entry.title_number) {
         const titleNum = entry.title_number.split("—")[0].trim();
         const departmentName = entry.title_number.split("—")[1]?.trim() || titleNum;
@@ -122,19 +75,17 @@ const TimeSeriesChart = () => {
           });
         }
 
-        // Safely handle date parsing
         let entryDate;
         try {
           const dateStr = entry.date || entry.created_at;
-          if (!dateStr) return; // Skip if no date
+          if (!dateStr) return;
           
           entryDate = new Date(dateStr);
-          if (isNaN(entryDate.getTime())) return; // Skip if invalid date
+          if (isNaN(entryDate.getTime())) return;
           
           entryDate = entryDate.toISOString().split('T')[0];
         } catch (error) {
-          console.warn('Invalid date for entry:', entry);
-          return; // Skip entries with invalid dates
+          return;
         }
 
         const closestTimeLabel = timeLabels.reduce((prev, curr) => {
@@ -156,7 +107,56 @@ const TimeSeriesChart = () => {
       }
     });
 
-    // Create scatter plot data
+    return { departmentData, timeLabels };
+  }, [data, timePeriod]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        console.log('Fetching data from:', `${API_URL}/small_summary.json`);
+        const response = await fetch(`${API_URL}/small_summary.json`, {
+          mode: 'cors',
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const json = await response.json();
+        console.log('Data received:', json);
+        
+        if (!Array.isArray(json)) {
+          throw new Error('Invalid data format: expected an array');
+        }
+
+        setData(json);
+        setError(null);
+        
+        // Extract unique titles
+        const uniqueTitles = [...new Set(json.map(item => item.title_number))];
+        setTitles(uniqueTitles);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (!processedData) return;
+
+    const { departmentData, timeLabels } = processedData;
     const datasets = Object.entries(departmentData).map(([department, timeData], index) => {
       const points = Object.entries(timeData).map(([date, metrics]) => {
         let value;
@@ -187,20 +187,18 @@ const TimeSeriesChart = () => {
       return {
         label: department,
         data: points,
-        backgroundColor: `hsla(${(index * 137.5) % 360}, 70%, 50%, 0.8)`,
-        borderColor: `hsla(${(index * 137.5) % 360}, 70%, 50%, 1)`,
+        backgroundColor: '#5A91EE',
+        borderColor: '#5A91EE',
         pointRadius: 6,
         pointHoverRadius: 8
       };
     });
 
-    const chartData = {
+    setChartData({
       labels: timeLabels,
       datasets
-    };
-
-    setChartData(chartData);
-  }, [data, selectedTitle, selectedMetric, timePeriod]);
+    });
+  }, [processedData, selectedMetric]);
 
   const chartOptions = {
     responsive: true,
@@ -209,119 +207,96 @@ const TimeSeriesChart = () => {
       x: {
         type: 'time',
         time: {
-          unit: timePeriod.toLowerCase(),
+          unit: 'day',
           displayFormats: {
-            daily: 'MMM d, yyyy',
-            weekly: 'MMM d, yyyy',
-            monthly: 'MMM yyyy',
-            quarterly: 'QQQ yyyy',
-            yearly: 'yyyy'
-          },
-          parser: 'yyyy-MM-dd',
-          tooltipFormat: 'MMM d, yyyy'
+            day: 'MMM d, yyyy',
+            week: 'MMM d, yyyy',
+            month: 'MMM yyyy',
+            quarter: 'QQQ yyyy',
+            year: 'yyyy'
+          }
         },
         title: {
           display: true,
           text: 'Time',
-          color: 'var(--text-light)',
+          color: 'rgb(249, 250, 251)',
           font: {
-            weight: 'bold',
-            family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+            family: '__Inter_d65c78, __Inter_Fallback_d65c78',
+            size: 14,
+            weight: '700'
           }
         },
         ticks: {
-          color: 'var(--text-light)',
+          color: 'rgb(249, 250, 251)',
           font: {
-            weight: 'bold',
-            family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+            family: '__Inter_d65c78, __Inter_Fallback_d65c78',
+            size: 12,
+            weight: '400'
           }
         },
         grid: {
-          color: 'var(--border-color)'
+          color: 'rgba(249, 250, 251, 0.1)'
         }
       },
       y: {
         type: 'linear',
         title: {
           display: true,
-          text: 'Regulatory Changes by Agency',
-          color: 'var(--text-light)',
+          text: 'Value',
+          color: 'rgb(249, 250, 251)',
           font: {
-            weight: 'bold',
-            family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+            family: '__Inter_d65c78, __Inter_Fallback_d65c78',
+            size: 14,
+            weight: '700'
           }
         },
         ticks: {
-          color: 'var(--text-light)',
+          color: 'rgb(249, 250, 251)',
           font: {
-            weight: 'bold',
-            family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+            family: '__Inter_d65c78, __Inter_Fallback_d65c78',
+            size: 12,
+            weight: '400'
           }
         },
         grid: {
-          color: 'var(--border-color)'
+          color: 'rgba(249, 250, 251, 0.1)'
         }
       }
     },
     plugins: {
       legend: {
+        position: 'right',
         labels: {
-          color: 'var(--text-light)',
+          color: 'rgb(249, 250, 251)',
           font: {
-            weight: 'bold',
-            family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-          }
+            family: '__Inter_d65c78, __Inter_Fallback_d65c78',
+            size: 12,
+            weight: '400'
+          },
+          padding: 20,
+          usePointStyle: true,
+          pointStyle: 'circle'
         }
       },
       tooltip: {
-        backgroundColor: 'var(--card-bg)',
-        titleColor: 'var(--text-light)',
-        bodyColor: 'var(--text-light)',
-        borderColor: 'var(--border-color)',
-        borderWidth: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: 'rgb(249, 250, 251)',
+        bodyColor: 'rgb(249, 250, 251)',
         titleFont: {
-          weight: 'bold',
-          family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+          family: '__Inter_d65c78, __Inter_Fallback_d65c78',
+          size: 14,
+          weight: '700'
         },
         bodyFont: {
-          weight: 'bold',
-          family: "'system-ui', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+          family: '__Inter_d65c78, __Inter_Fallback_d65c78',
+          size: 12,
+          weight: '400'
         },
         callbacks: {
           label: function(context) {
-            const value = context.raw.y;
-            const absValue = Math.abs(value);
-            let changeText = '';
-            
-            switch(selectedMetric) {
-              case 'wordCount':
-                changeText = value > 0 ? `Increased Total Word Count by ${absValue} words` : 
-                          value < 0 ? `Reduced Total Word Count by ${absValue} words` : 
-                          'No change in Total Word Count';
-                break;
-              case 'sectionCount':
-                changeText = value > 0 ? `Increased Number of Sections by ${absValue} sections` : 
-                          value < 0 ? `Reduced Number of Sections by ${absValue} sections` : 
-                          'No change in Number of Sections';
-                break;
-              case 'partCount':
-                changeText = value > 0 ? `Increased Number of Parts by ${absValue} parts` : 
-                          value < 0 ? `Reduced Number of Parts by ${absValue} parts` : 
-                          'No change in Number of Parts';
-                break;
-              case 'avgWordsPerSection':
-                changeText = value > 0 ? `Increased Average Words per Section by ${absValue}` : 
-                          value < 0 ? `Reduced Average Words per Section by ${absValue}` : 
-                          'No change in Average Words per Section';
-                break;
-              default:
-                changeText = value > 0 ? `Increased by ${absValue}` : 
-                          value < 0 ? `Reduced by ${absValue}` : 
-                          'No change';
-                break;
-            }
-            
-            return `${context.dataset.label}: ${changeText}`;
+            const label = context.dataset.label || '';
+            const value = context.parsed.y;
+            return `${label}: ${value}`;
           }
         }
       }
@@ -336,53 +311,58 @@ const TimeSeriesChart = () => {
       </p>
       <div className="chart-content">
         {error && (
-          <div style={{ color: 'red', marginBottom: '1rem' }}>
-            Error loading data: {error}
+          <div className="error-message">
+            Error: {error}
           </div>
         )}
-
-        <div className="chart-controls">
-          <select 
-            value={selectedTitle} 
-            onChange={(e) => setSelectedTitle(e.target.value)}
-            id="titleSelect"
-          >
-            <option value="All Titles">All Titles</option>
-            {titles.map(title => (
-              <option key={title} value={title}>{title}</option>
-            ))}
-          </select>
-
-          <select 
-            value={selectedMetric} 
-            onChange={(e) => setSelectedMetric(e.target.value)}
-            id="metricSelect"
-          >
-            <option value="wordCount">Total Word Count</option>
-            <option value="sectionCount">Number of Sections</option>
-            <option value="partCount">Number of Parts</option>
-            <option value="avgWordsPerSection">Average Words per Section</option>
-          </select>
-
-          <select 
-            value={timePeriod} 
-            onChange={(e) => setTimePeriod(e.target.value)}
-            id="timePeriodSelect"
-          >
-            <option value="Daily">Daily</option>
-            <option value="Weekly">Weekly</option>
-            <option value="Monthly">Monthly</option>
-            <option value="Quarterly">Quarterly</option>
-            <option value="Annually">Annually</option>
-          </select>
-        </div>
-
-        {chartData ? (
-          <div style={{ height: '500px', width: '100%' }}>
-            <Scatter data={chartData} options={chartOptions} />
+        {isLoading ? (
+          <div className="loading-message">
+            Loading data...
           </div>
         ) : (
-          <p style={{ color: 'var(--text-light)' }}>Loading chart...</p>
+          <>
+            <div className="chart-controls">
+              <select 
+                value={selectedTitle} 
+                onChange={(e) => setSelectedTitle(e.target.value)}
+                id="titleSelect"
+              >
+                <option value="All Titles">All Titles</option>
+                {titles.map(title => (
+                  <option key={title} value={title}>{title}</option>
+                ))}
+              </select>
+
+              <select 
+                value={selectedMetric} 
+                onChange={(e) => setSelectedMetric(e.target.value)}
+                id="metricSelect"
+              >
+                <option value="wordCount">Total Word Count</option>
+                <option value="sectionCount">Number of Sections</option>
+                <option value="partCount">Number of Parts</option>
+                <option value="avgWordsPerSection">Average Words per Section</option>
+              </select>
+
+              <select 
+                value={timePeriod} 
+                onChange={(e) => setTimePeriod(e.target.value)}
+                id="timePeriodSelect"
+              >
+                <option value="Daily">Daily</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="Annually">Annually</option>
+              </select>
+            </div>
+
+            {chartData && (
+              <div style={{ height: '500px', width: '100%' }}>
+                <Scatter data={chartData} options={chartOptions} />
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

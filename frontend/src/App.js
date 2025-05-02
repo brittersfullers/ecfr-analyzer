@@ -2,12 +2,22 @@ import React from 'react';
 import './App.css';
 import ChartDashboard from './ChartDashboard';
 import TimeSeriesChart from './TimeSeriesChart';
+import PDFGenerator from './PDFGenerator';
 
 function App() {
   return (
     <div className="App">
+      <div className="gov-banner">
+        🇺🇸 An [un]official website of the United States government
+      </div>
       <header className="App-header">
-        <img src="/logo.svg" className="App-logo" alt="eCFR Analyzer Logo" />
+        <div className="logo-container">
+          <img src={process.env.PUBLIC_URL + '/logo.svg'} className="App-logo" alt="eCFR Analyzer Logo" />
+          <div className="header-text">
+            <h1 className="department-title">Department of Government Efficiency</h1>
+            <p className="department-tagline">The people voted for major reform.</p>
+          </div>
+        </div>
         <nav className="App-nav">
           <a href="/">Home</a>
           <a href="/regulations">Regulations</a>
@@ -15,6 +25,7 @@ function App() {
         </nav>
       </header>
       <main className="App-main">
+        <PDFGenerator />
         <ChartDashboard />
         <TimeSeriesChart />
       </main>
