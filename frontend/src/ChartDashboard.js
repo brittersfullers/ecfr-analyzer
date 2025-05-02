@@ -4,7 +4,7 @@ import { Chart, BarElement, CategoryScale, LinearScale } from "chart.js";
 
 Chart.register(BarElement, CategoryScale, LinearScale);
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_URL = process.env.REACT_APP_API_URL || 'https://ecfr-analyzer-staging-5b93a7fa9af7.herokuapp.com';
 
 const ChartDashboard = () => {
   const [allData, setAllData] = useState([]);
@@ -17,6 +17,7 @@ const ChartDashboard = () => {
   useEffect(() => {
     console.log('Fetching data from:', `${API_URL}/small_summary.json`);
     fetch(`${API_URL}/small_summary.json`, {
+      mode: 'cors',
       credentials: 'include',
       headers: {
         'Accept': 'application/json',

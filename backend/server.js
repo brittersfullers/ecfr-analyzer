@@ -20,32 +20,37 @@ const ENV_PREFIX = process.env.NODE_ENV === 'production' ? 'prod/' : 'staging/';
 // Enable CORS with specific configuration
 const allowedOrigins = [
   'https://ecfr-analyzer-staging-5b93a7fa9af7.herokuapp.com',
-  'http://localhost:3000'
+  'http://localhost:3000',
+  'http://localhost:3001'
 ];
 
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      console.log('Rejected CORS request from origin:', origin);
-      return callback(new Error('Not allowed by CORS'), false);
-    }
-    console.log('Allowed CORS request from origin:', origin);
-    return callback(null, true);
-  },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  credentials: true
-}));
-
-// Add request logging middleware
+// CORS configuration
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  console.log('Headers:', req.headers);
-  console.log('Origin:', req.headers.origin);
+  const origin = req.headers.origin;
+  console.log('Request origin:', origin);
+  
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  }
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
+// Logging middleware
+app.use((req, res, next) => {
+  console.log('Incoming request:', {
+    method: req.method,
+    url: req.url,
+    headers: req.headers,
+    origin: req.headers.origin
+  });
   next();
 });
 
