@@ -114,8 +114,34 @@ const ChartDashboard = () => {
     let labels = Object.keys(titleMetrics).map(titleNum => {
       const fullTitle = titleNames[titleNum] || titleNum;
       // Remove the number prefix and dash, then trim
-      return fullTitle.split("—")[1]?.trim() || fullTitle;
+      const departmentName = fullTitle.split("—")[1]?.trim() || fullTitle;
+      return departmentName;
     });
+
+    // Update chart options to handle long labels
+    const updatedChartOptions = {
+      ...chartOptions,
+      scales: {
+        ...chartOptions.scales,
+        x: {
+          ...chartOptions.scales.x,
+          ticks: {
+            ...chartOptions.scales.x.ticks,
+            maxRotation: 90,
+            minRotation: 90,
+            font: {
+              size: 10
+            },
+            padding: 20,
+            callback: function(value) {
+              // Return the full label without truncation
+              return value;
+            }
+          }
+        }
+      }
+    };
+
     let values = labels.map((title) => {
       const titleNum = title.split("—")[0].trim();
       const metrics = titleMetrics[titleNum];
@@ -241,7 +267,7 @@ const ChartDashboard = () => {
           <div style={{ height: '500px', width: '100%' }}>
             <Bar 
               data={chartData} 
-              options={chartOptions}
+              options={updatedChartOptions}
             />
           </div>
         ) : <p>Loading chart...</p>}

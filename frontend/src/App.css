@@ -79,6 +79,7 @@
   min-height: 500px;
   display: flex;
   flex-direction: column;
+  margin-bottom: 50px; /* Add space for rotated labels */
 }
 
 .chart-title {
