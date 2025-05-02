@@ -16,7 +16,8 @@ const chartOptions = {
         maxRotation: 45,
         minRotation: 45,
         font: {
-          size: 10
+          size: 12,
+          weight: 'bold'
         },
         padding: 10,
         color: 'var(--text-light)'
@@ -31,7 +32,10 @@ const chartOptions = {
         color: 'var(--border-color)'
       },
       ticks: {
-        color: 'var(--text-light)'
+        color: 'var(--text-light)',
+        font: {
+          weight: 'bold'
+        }
       }
     }
   },
@@ -39,7 +43,10 @@ const chartOptions = {
     legend: {
       display: false,
       labels: {
-        color: 'var(--text-light)'
+        color: 'var(--text-light)',
+        font: {
+          weight: 'bold'
+        }
       }
     },
     tooltip: {
@@ -47,7 +54,13 @@ const chartOptions = {
       titleColor: 'var(--text-light)',
       bodyColor: 'var(--text-light)',
       borderColor: 'var(--border-color)',
-      borderWidth: 1
+      borderWidth: 1,
+      titleFont: {
+        weight: 'bold'
+      },
+      bodyFont: {
+        weight: 'bold'
+      }
     }
   }
 };
@@ -191,8 +204,10 @@ const ChartDashboard = () => {
           label: getMetricLabel(selectedMetric),
           data: values,
           backgroundColor: backgroundColors,
-        },
-      ],
+          borderColor: 'var(--border-color)',
+          borderWidth: 1
+        }
+      ]
     };
 
     console.log('Setting chart data:', newChartData);
