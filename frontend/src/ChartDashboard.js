@@ -241,7 +241,7 @@ const ChartDashboard = () => {
           </div>
         )}
 
-        <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+        <div className="chart-controls">
           <select value={selectedMetric} onChange={(e) => setSelectedMetric(e.target.value)} id="metricSelect">
             <option value="wordCount">Total Word Count</option>
             <option value="sectionCount">Number of Sections</option>
