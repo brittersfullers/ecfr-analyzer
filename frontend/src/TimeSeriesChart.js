@@ -57,10 +57,14 @@ const TimeSeriesChart = () => {
       return;
     }
 
+    // Limit the number of items to process
+    const maxItems = 1000;
+    const limitedData = data.slice(0, maxItems);
+
     // Filter data by selected title if not "All Titles"
     const filteredData = selectedTitle === "All Titles" 
-      ? data 
-      : data.filter(item => item.title_number === selectedTitle);
+      ? limitedData 
+      : limitedData.filter(item => item.title_number === selectedTitle);
 
     // Group data by department and time period
     const departmentData = {};

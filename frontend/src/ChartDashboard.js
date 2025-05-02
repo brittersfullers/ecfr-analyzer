@@ -116,11 +116,15 @@ const ChartDashboard = () => {
       return;
     }
 
-    console.log('Processing', allData.length, 'items');
+    // Limit the number of items to process
+    const maxItems = 1000;
+    const limitedData = allData.slice(0, maxItems);
+    console.log('Processing', limitedData.length, 'items');
+
     const titleMetrics = {};
     const titleNames = {};
 
-    allData.forEach((entry) => {
+    limitedData.forEach((entry) => {
       if (entry.title_number) {
         const titleNum = entry.title_number.split("—")[0].trim();
         const fullTitle = entry.title_number.trim();
