@@ -21,6 +21,7 @@ const ENV_PREFIX = process.env.NODE_ENV === 'production' ? 'prod/' : 'staging/';
 const allowedOrigins = [
   'https://ecfr-analyzer-api2-8bddf33fb1bd.herokuapp.com',
   'https://ecfr-analyzer-staging.herokuapp.com',
+  'https://ecfr-analyzer-staging-5b93a7fa9af7.herokuapp.com',  // Add the actual frontend URL
   'http://localhost:3000'  // For local development
 ];
 
@@ -30,9 +31,11 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) === -1) {
+      console.log('Rejected CORS request from origin:', origin);
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       return callback(new Error(msg), false);
     }
+    console.log('Allowed CORS request from origin:', origin);
     return callback(null, true);
   },
   methods: ['GET', 'POST', 'OPTIONS'],
