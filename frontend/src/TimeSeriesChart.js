@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
-import { Chart, LineElement, PointElement, CategoryScale, LinearScale, TimeScale } from "chart.js";
-import 'chartjs-adapter-date-fns';
+import { Chart, LineElement, PointElement, CategoryScale, LinearScale } from "chart.js";
 
-Chart.register(LineElement, PointElement, CategoryScale, LinearScale, TimeScale);
+Chart.register(LineElement, PointElement, CategoryScale, LinearScale);
 
 const TimeSeriesChart = ({ data }) => {
   const [chartData, setChartData] = useState(null);
