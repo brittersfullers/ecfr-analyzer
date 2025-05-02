@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Line } from "react-chartjs-2";
-import { Chart, LineElement, PointElement, CategoryScale, LinearScale, Filler } from "chart.js";
+import { Scatter } from "react-chartjs-2";
+import { Chart, PointElement, CategoryScale, LinearScale } from "chart.js";
 
-Chart.register(LineElement, PointElement, CategoryScale, LinearScale, Filler);
+Chart.register(PointElement, CategoryScale, LinearScale);
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://ecfr-analyzer-staging-5b93a7fa9af7.herokuapp.com';
 
 const TimeSeriesChart = () => {
   const [data, setData] = useState([]);
+  const [selectedMetric, setSelectedMetric] = useState("wordCount");
   const [timePeriod, setTimePeriod] = useState("Monthly");
   const [chartData, setChartData] = useState(null);
   const [error, setError] = useState(null);
@@ -113,30 +114,55 @@ const TimeSeriesChart = () => {
           timeLabels.push(d.toISOString().split('T')[0]);
         }
         break;
+      default:
+        break;
     }
 
     // Create datasets for each department
-    const datasets = Object.entries(departmentData).map(([department, metrics]) => ({
-      label: department,
-      data: timeLabels.map(() => metrics.wordCount), // Using wordCount as an example metric
-      borderColor: `hsl(${Math.random() * 360}, 70%, 50%)`,
-      backgroundColor: 'rgba(0, 0, 0, 0.1)',
-      fill: true,
-      tension: 0.4
-    }));
+    const datasets = Object.entries(departmentData).map(([department, metrics]) => {
+      let value;
+      switch (selectedMetric) {
+        case "wordCount":
+          value = metrics.wordCount;
+          break;
+        case "sectionCount":
+          value = metrics.sectionCount;
+          break;
+        case "partCount":
+          value = metrics.partCount;
+          break;
+        case "avgWordsPerSection":
+          value = metrics.sectionCount ? (metrics.wordCount / metrics.sectionCount).toFixed(2) : 0;
+          break;
+        default:
+          value = 0;
+      }
+
+      return {
+        label: department,
+        data: timeLabels.map((date, index) => ({
+          x: index,
+          y: value
+        })),
+        backgroundColor: `hsl(${Math.random() * 360}, 70%, 50%)`,
+        pointRadius: 6,
+        pointHoverRadius: 8
+      };
+    });
 
     setChartData({
       labels: timeLabels,
       datasets
     });
-  }, [data, timePeriod]);
+  }, [data, selectedMetric, timePeriod]);
 
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
       x: {
-        type: 'category',
+        type: 'linear',
+        position: 'bottom',
         title: {
           display: true,
           text: 'Time',
@@ -158,6 +184,7 @@ const TimeSeriesChart = () => {
         }
       },
       y: {
+        type: 'category',
         title: {
           display: true,
           text: 'Department',
@@ -207,6 +234,21 @@ const TimeSeriesChart = () => {
     }
   };
 
+  const getMetricLabel = (metric) => {
+    switch (metric) {
+      case "wordCount":
+        return "Total Word Count";
+      case "sectionCount":
+        return "Number of Sections";
+      case "partCount":
+        return "Number of Parts";
+      case "avgWordsPerSection":
+        return "Average Words per Section";
+      default:
+        return "";
+    }
+  };
+
   return (
     <div className="chart-container">
       <h2 className="chart-title">Regulation Timeline Analysis</h2>
@@ -222,6 +264,17 @@ const TimeSeriesChart = () => {
 
         <div className="chart-controls">
           <select 
+            value={selectedMetric} 
+            onChange={(e) => setSelectedMetric(e.target.value)}
+            id="metricSelect"
+          >
+            <option value="wordCount">Total Word Count</option>
+            <option value="sectionCount">Number of Sections</option>
+            <option value="partCount">Number of Parts</option>
+            <option value="avgWordsPerSection">Average Words per Section</option>
+          </select>
+
+          <select 
             value={timePeriod} 
             onChange={(e) => setTimePeriod(e.target.value)}
             id="timePeriodSelect"
@@ -236,7 +289,7 @@ const TimeSeriesChart = () => {
 
         {chartData ? (
           <div style={{ height: '500px', width: '100%' }}>
-            <Line data={chartData} options={chartOptions} />
+            <Scatter data={chartData} options={chartOptions} />
           </div>
         ) : (
           <p style={{ color: 'var(--text-light)' }}>Loading chart...</p>
