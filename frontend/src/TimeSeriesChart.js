@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Scatter } from "react-chartjs-2";
 import { Chart, PointElement, CategoryScale, LinearScale, TimeScale } from "chart.js";
+import 'chartjs-adapter-date-fns';
 
 Chart.register(PointElement, CategoryScale, LinearScale, TimeScale);
 
@@ -196,7 +197,9 @@ const TimeSeriesChart = () => {
             monthly: 'MMM yyyy',
             quarterly: 'QQQ yyyy',
             yearly: 'yyyy'
-          }
+          },
+          parser: 'yyyy-MM-dd',
+          tooltipFormat: 'MMM d, yyyy'
         },
         title: {
           display: true,
