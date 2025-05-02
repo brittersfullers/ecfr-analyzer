@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
-import { Chart, LineElement, CategoryScale, LinearScale, PointElement } from "chart.js";
+import { Chart, LineElement, CategoryScale, LinearScale, PointElement, Filler } from "chart.js";
 
-Chart.register(LineElement, CategoryScale, LinearScale, PointElement);
+Chart.register(LineElement, CategoryScale, LinearScale, PointElement, Filler);
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://ecfr-analyzer-staging-5b93a7fa9af7.herokuapp.com';
 
@@ -204,7 +204,7 @@ const TimeSeriesChart = () => {
             <Line data={chartData} options={chartOptions} />
           </div>
         ) : (
-          <p>Loading chart...</p>
+          <p style={{ color: 'var(--text-light)' }}>Loading chart...</p>
         )}
       </div>
     </div>

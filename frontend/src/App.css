@@ -30,6 +30,7 @@ body {
   pointer-events: none;
   max-width: 120px;
   margin: 0;
+  filter: brightness(0) invert(1);
 }
 
 .App-header {
@@ -40,6 +41,9 @@ body {
   align-items: center;
   justify-content: space-between;
   height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .App-link {
@@ -54,7 +58,6 @@ body {
 .App-nav a {
   color: var(--text-light);
   text-decoration: none;
-  margin-left: 24px;
   font-weight: 500;
   transition: color 0.2s;
 }
