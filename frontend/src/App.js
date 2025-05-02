@@ -6,7 +6,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src="/logo.svg" className="App-logo" alt="logo" />
+        <img src="/logo192.png" className="App-logo" alt="eCFR Analyzer Logo" />
         <nav className="App-nav">
           <a href="/">Home</a>
           <a href="/regulations">Regulations</a>
